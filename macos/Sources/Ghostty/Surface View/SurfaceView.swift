@@ -221,11 +221,7 @@ extension Ghostty {
 
                 VStack(alignment: .leading) {
                     Text("Oh, no. 😭").font(.title)
-                    Text("""
-                        The renderer has failed. This is usually due to exhausting
-                        available GPU memory. Please free up available resources.
-                        """.replacingOccurrences(of: "\n", with: " ")
-                    )
+                    Text("The renderer has failed. This is usually due to exhausting available GPU memory. Please free up available resources.")
                     .frame(maxWidth: 350)
                 }
             }
@@ -243,11 +239,7 @@ extension Ghostty {
 
                 VStack(alignment: .leading) {
                     Text("Oh, no. 😭").font(.title)
-                    Text("""
-                        The terminal failed to initialize. Please check the logs for
-                        more information. This is usually a bug.
-                        """.replacingOccurrences(of: "\n", with: " ")
-                    )
+                    Text("The terminal failed to initialize. Please check the logs for more information. This is usually a bug.")
                     .frame(maxWidth: 350)
                 }
             }
@@ -1088,7 +1080,7 @@ extension Ghostty {
                 Spacer()
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Read-only terminal")
+            .accessibilityLabel(Text("Read-only terminal"))
         }
 
         private var badgeBackground: some View {

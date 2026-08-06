@@ -14,15 +14,15 @@ struct UntrustedURL: Equatable {
         var message: String {
             switch self {
             case .malformedURL:
-                "The target is not an absolute URL with a scheme."
+                String(localized: "The target is not an absolute URL with a scheme.")
             case .unsafeCharacters:
-                "The target contains invisible or line-breaking characters."
+                String(localized: "The target contains invisible or line-breaking characters.")
             case .invalidWebURL:
-                "The web target does not contain a valid host."
+                String(localized: "The web target does not contain a valid host.")
             case .inaccessibleFile:
-                "The local target does not exist or is not a regular file or directory."
+                String(localized: "The local target does not exist or is not a regular file or directory.")
             case .unsafeFile:
-                "Opening this local target could execute code."
+                String(localized: "Opening this local target could execute code.")
             }
         }
     }

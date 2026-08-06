@@ -30,10 +30,10 @@ extension Ghostty {
                 } else {
                     formatter.unitOptions = .providedUnit
                 }
-                formatter.locale = .init(identifier: "en_US")
-                text = "Process exited after **`\(formatter.string(from: measure))`**. Press any key to close the terminal."
+                formatter.locale = .current
+                text = String(localized: "Process exited after **`\(formatter.string(from: measure))`**. Press any key to close the terminal.")
             } else {
-                text = "Process exited. Press any key to close the terminal."
+                text = String(localized: "Process exited. Press any key to close the terminal.")
             }
             self.level = level
         }

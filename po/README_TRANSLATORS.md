@@ -140,10 +140,6 @@ section before submitting a pull request!
 
 ## Viewing translations
 
-> [!NOTE]
-> The localization system is not yet implemented for macOS, so it is not
-> possible to view your translations there.
-
 Simply run `zig build run`. Ghostty uses your system language by default; if
 your translations are for a different language, use
 `zig build run -- --language=X` (where `X` is your locale name). You can
@@ -157,6 +153,34 @@ client-side decorations with `zig build run -- --window-decoration=client`.
 Some strings are present in multiple places! A notable example is the context
 menus: the hamburger menu in the header bar duplicates many strings present in
 the right click menu.
+
+### macOS Simplified Chinese
+
+The macOS app uses Apple's `zh-Hans` language identifier for its native UI and
+`zh_CN` gettext resources for command metadata provided by the Zig core. Ghostty
+normalizes the Apple language identifier automatically, so both sources follow
+the macOS system language and the per-app language selected in System Settings.
+English remains the source and fallback language.
+
+Native Swift, SwiftUI, AppKit, App Intents, accessibility, and Info.plist text is
+maintained in the String Catalogs under `macos/Sources`. For XIB-backed
+interfaces, keep the source XIB in `Base.lproj` and its same-named catalog in the
+parent directory. A root-level XIB shadows the localized table at runtime. These
+catalogs belong to the macOS Ghostty target only; they are not shared with the
+iOS app or Dock tile plug-in. Core command titles and descriptions remain in
+`po/zh_CN.po` so GTK can reuse the same translations.
+
+Build the core framework and macOS app before previewing a language override:
+
+```console
+$ zig build -Demit-macos-app=false
+$ macos/build.nu
+$ open macos/build/Debug/Ghostty.app --args -AppleLanguages '(zh-Hans)' -AppleLocale zh_CN
+```
+
+Quit all running Ghostty processes before changing the language. Relaunching is
+required, matching normal macOS per-app language behavior. To preview fallback,
+replace `zh-Hans` with an unsupported language identifier.
 
 ## Localization teams
 

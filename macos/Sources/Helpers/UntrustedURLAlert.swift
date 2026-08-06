@@ -8,18 +8,15 @@ enum UntrustedURLAlert {
             let workspace = NSWorkspace.shared
             let handler = workspace.urlForApplication(toOpen: url)
                 .map { "\u{201c}\($0.deletingPathExtension().lastPathComponent)\u{201d}" }
-                ?? "the default application"
+                ?? String(localized: "the default application")
             let alert = NSAlert()
             alert.alertStyle = .warning
             alert.icon = NSImage(named: NSImage.cautionName)
-            alert.messageText = "Open Link from Terminal Output?"
-            alert.informativeText = """
-            This link will open in \(handler). Only continue if you recognize \
-            and trust the destination.
-            """
+            alert.messageText = String(localized: "Open Link from Terminal Output?")
+            alert.informativeText = String(localized: "This link will open in \(handler). Only continue if you recognize and trust the destination.")
             alert.accessoryView = targetView(displayString)
-            alert.addButton(withTitle: "Cancel")
-            alert.addButton(withTitle: "Open Link")
+            alert.addButton(withTitle: String(localized: "Cancel"))
+            alert.addButton(withTitle: String(localized: "Open Link"))
 
             present(alert) { response in
                 // Cancel is deliberately the default action.
@@ -37,11 +34,11 @@ enum UntrustedURLAlert {
             let alert = NSAlert()
             alert.alertStyle = .warning
             alert.icon = NSImage(named: NSImage.cautionName)
-            alert.messageText = "Ghostty Blocked This Link"
+            alert.messageText = String(localized: "Ghostty Blocked This Link")
             alert.informativeText = reason.message
             alert.accessoryView = targetView(displayString)
-            alert.addButton(withTitle: "OK")
-            alert.addButton(withTitle: "Copy Link")
+            alert.addButton(withTitle: String(localized: "OK"))
+            alert.addButton(withTitle: String(localized: "Copy Link"))
 
             present(alert) { response in
                 // Keep blocked targets out of Launch Services. Copying the

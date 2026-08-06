@@ -220,7 +220,8 @@ class AppDelegate: NSObject,
         // Initial config loading
         ghosttyConfigDidChange(config: ghostty.config)
 
-        // Start our update checker.
+        // UpdateController keeps Sparkle stopped in ghostty-cn until this fork
+        // publishes its own signed update feed.
         updateController.startUpdater()
 
         // Register our service provider. This must happen after everything is initialized.
@@ -279,7 +280,9 @@ class AppDelegate: NSObject,
 
         // Configure user notifications
         let actions = [
-            UNNotificationAction(identifier: Ghostty.userNotificationActionShow, title: "Show")
+            UNNotificationAction(
+                identifier: Ghostty.userNotificationActionShow,
+                title: String(localized: "Show", comment: "Notification action that shows a terminal"))
         ]
 
         let center = UNUserNotificationCenter.current()
@@ -494,9 +497,9 @@ class AppDelegate: NSObject,
             // may want to show this as a sheet on the focused window (especially if we're
             // opening a tab). I'm not sure.
             let alert = NSAlert()
-            alert.messageText = "Allow Ghostty to execute \"\(filename)\"?"
-            alert.addButton(withTitle: "Allow")
-            alert.addButton(withTitle: "Cancel")
+            alert.messageText = String(localized: "Allow Ghostty to execute \"\(filename)\"?")
+            alert.addButton(withTitle: String(localized: "Allow"))
+            alert.addButton(withTitle: String(localized: "Cancel"))
             alert.alertStyle = .warning
             switch alert.runModal() {
             case .alertFirstButtonReturn:
@@ -763,7 +766,10 @@ class AppDelegate: NSObject,
         // explicitly false (NO), auto-updates are disabled. Otherwise, we use the behavior
         // defined by our "auto-update" configuration (if set) or fall back to Sparkle
         // user-based defaults.
-        if Bundle.main.infoDictionary?["SUEnableAutomaticChecks"] as? Bool == false {
+        if !UpdateController.isEnabled {
+            updateController.updater.automaticallyChecksForUpdates = false
+            updateController.updater.automaticallyDownloadsUpdates = false
+        } else if Bundle.main.infoDictionary?["SUEnableAutomaticChecks"] as? Bool == false {
             updateController.updater.automaticallyChecksForUpdates = false
             updateController.updater.automaticallyDownloadsUpdates = false
         } else if let autoUpdate = config.autoUpdate {
@@ -1084,8 +1090,14 @@ extension AppDelegate {
     }
 
     private func reloadDockMenu() {
-        let newWindow = NSMenuItem(title: "New Window", action: #selector(newWindow), keyEquivalent: "")
-        let newTab = NSMenuItem(title: "New Tab", action: #selector(newTab), keyEquivalent: "")
+        let newWindow = NSMenuItem(
+            title: String(localized: "New Window"),
+            action: #selector(newWindow),
+            keyEquivalent: "")
+        let newTab = NSMenuItem(
+            title: String(localized: "New Tab"),
+            action: #selector(newTab),
+            keyEquivalent: "")
 
         dockMenu.removeAllItems()
         dockMenu.addItem(newWindow)
@@ -1251,12 +1263,8 @@ extension AppDelegate {
             guard let error else { return }
             Task { @MainActor in
                 let alert = NSAlert()
-                alert.messageText = "Failed to Set Default Terminal"
-                alert.informativeText = """
-                Ghostty could not be set as the default terminal application.
-
-                Error: \(error.localizedDescription)
-                """
+                alert.messageText = String(localized: "Failed to Set Default Terminal")
+                alert.informativeText = String(localized: "Ghostty could not be set as the default terminal application.\n\nError: \(error.localizedDescription)")
                 alert.alertStyle = .warning
                 alert.runModal()
             }
@@ -1272,6 +1280,9 @@ extension AppDelegate: NSMenuItemValidation {
         case #selector(setAsDefaultTerminal(_:)):
             return NSWorkspace.shared.defaultTerminal != Bundle.main.bundleURL
 
+        case #selector(checkForUpdates(_:)):
+            return UpdateController.isEnabled && updateController.updater.canCheckForUpdates
+
         case #selector(floatOnTop(_:)),
             #selector(useAsDefault(_:)):
             // Float on top items only active if the key window is a primary
@@ -1280,17 +1291,17 @@ extension AppDelegate: NSMenuItemValidation {
 
         case #selector(undo(_:)):
             if undoManager.canUndo {
-                item.title = "Undo \(undoManager.undoActionName)"
+                item.title = String(localized: "Undo \(undoManager.undoActionName)")
             } else {
-                item.title = "Undo"
+                item.title = String(localized: "Undo")
             }
             return undoManager.canUndo
 
         case #selector(redo(_:)):
             if undoManager.canRedo {
-                item.title = "Redo \(undoManager.redoActionName)"
+                item.title = String(localized: "Redo \(undoManager.redoActionName)")
             } else {
-                item.title = "Redo"
+                item.title = String(localized: "Redo")
             }
             return undoManager.canRedo
 
@@ -1315,9 +1326,9 @@ extension AppDelegate {
         if controllersNeedConfirmation.count == 1 {
             Task {
                 let response = await controllersNeedConfirmation[0].confirmCloseAsync(
-                    messageText: "Quit Ghostty?",
-                    informativeText: "The terminal still has a running process. If you quit, the process will be killed.",
-                    confirmButtonTitle: "Terminate",
+                    messageText: String(localized: "Quit Ghostty?"),
+                    informativeText: String(localized: "The terminal still has a running process. If you quit, the process will be killed."),
+                    confirmButtonTitle: String(localized: "Terminate"),
                 )
 
                 if [.OK, .alertFirstButtonReturn].contains(response) {
@@ -1330,11 +1341,11 @@ extension AppDelegate {
             return .terminateLater
         } else {
             let alert = NSAlert()
-            alert.messageText = "You have \(controllersNeedConfirmation.count) windows with running processes. Do you want to review these windows before quitting?"
-            alert.informativeText = "If you don't review your windows, any running processes will be terminated"
-            alert.addButton(withTitle: "Review Windows...")
-            alert.addButton(withTitle: "Terminate Processes")
-            alert.addButton(withTitle: "Cancel")
+            alert.messageText = String(localized: "You have \(controllersNeedConfirmation.count) windows with running processes. Do you want to review these windows before quitting?")
+            alert.informativeText = String(localized: "If you don't review your windows, any running processes will be terminated")
+            alert.addButton(withTitle: String(localized: "Review Windows…"))
+            alert.addButton(withTitle: String(localized: "Terminate Processes"))
+            alert.addButton(withTitle: String(localized: "Cancel"))
             alert.alertStyle = .warning
 
             switch alert.runModal() {
@@ -1353,9 +1364,9 @@ extension AppDelegate {
         Task {
             for controller in controllers {
                 let response = await controller.confirmCloseAsync(
-                    messageText: "Quit Ghostty?",
-                    informativeText: "The terminal still has a running process. If you quit, the process will be killed.",
-                    confirmButtonTitle: "Terminate",
+                    messageText: String(localized: "Quit Ghostty?"),
+                    informativeText: String(localized: "The terminal still has a running process. If you quit, the process will be killed."),
+                    confirmButtonTitle: String(localized: "Terminate"),
                 )
 
                 if [.OK, .alertFirstButtonReturn].contains(response) {

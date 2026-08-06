@@ -2,24 +2,64 @@
 <h1>
 <p align="center">
   <img src="https://github.com/user-attachments/assets/fe853809-ba8b-400b-83ab-a9a0da25be8a" alt="Logo" width="128">
-  <br>Ghostty
+  <br>Ghostty 简体中文版
 </h1>
   <p align="center">
-    Fast, native, feature-rich terminal emulator pushing modern features.
+    基于 Ghostty 上游项目，为 macOS 原生界面提供简体中文支持。
     <br />
-    A native GUI or embeddable library via <code>libghostty</code>.
+    保留原生性能、界面体验和 <code>libghostty</code> 能力。
     <br />
-    <a href="#about">About</a>
+    <a href="#ghostty-简体中文版">中文版说明</a>
     ·
-    <a href="https://ghostty.org/download">Download</a>
+    <a href="https://github.com/vein-cyber/ghostty-cn/releases">下载</a>
     ·
-    <a href="https://ghostty.org/docs">Documentation</a>
+    <a href="https://ghostty.org/docs">上游文档</a>
     ·
-    <a href="CONTRIBUTING.md">Contributing</a>
+    <a href="CONTRIBUTING.md">参与贡献</a>
     ·
-    <a href="HACKING.md">Developing</a>
+    <a href="HACKING.md">开发</a>
   </p>
 </p>
+
+## Ghostty 简体中文版
+
+本仓库基于 [Ghostty](https://github.com/ghostty-org/ghostty)，第一阶段为
+macOS 原生应用提供完整的简体中文界面。英文继续作为源语言和回退语言，
+不改变配置键、命令行参数、AppleScript 接口或终端内容。
+
+目前已实现：
+
+- macOS 菜单、窗口、弹窗、通知、更新界面、App Intents 和无障碍文案的
+  `zh-Hans` 本地化。
+- 使用现有 gettext `zh_CN` 翻译核心命令标题和说明。
+- 跟随 macOS 系统语言以及“每个 App 的语言”设置，完全退出并重新启动后
+  生效。
+- 保持英文回退；品牌名、快捷键、路径、用户标题和终端内容保持原样。
+- 暂时关闭 Sparkle 更新功能，防止中文构建被 Ghostty 官方版本替换。
+
+### 选择简体中文
+
+当 macOS 的首选语言为简体中文时，Ghostty 会自动使用中文。也可以前往
+“系统设置 → 通用 → 语言与地区 → 应用程序”，为 Ghostty 单独选择
+“简体中文”。切换后需要完全退出 Ghostty，再重新启动。
+
+### 本地构建
+
+构建经过优化、同时支持 Apple Silicon 与 Intel 的本地 Release 版本：
+
+```shell
+zig build -Doptimize=ReleaseFast
+open macos/build/ReleaseLocal/Ghostty.app
+```
+
+产物位于 `macos/build/ReleaseLocal/Ghostty.app`。`ReleaseLocal` 使用本机临时
+签名，适合本地测试；公开分发前仍需使用 Apple Developer 证书签名并完成
+公证。
+
+> [!IMPORTANT]
+>
+> [Ghostty 官方下载页面](https://ghostty.org/download)提供的是上游原版，
+> 不包含本仓库的简体中文改动。
 
 ## About
 
@@ -40,7 +80,10 @@ For more details, see [About Ghostty](https://ghostty.org/docs/about).
 
 ## Download
 
-See the [download page](https://ghostty.org/download) on the Ghostty website.
+Simplified Chinese builds are published on this repository's
+[Releases page](https://github.com/vein-cyber/ghostty-cn/releases). The
+[official Ghostty download page](https://ghostty.org/download) provides the
+upstream build without this repository's localization changes.
 
 ## Documentation
 

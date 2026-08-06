@@ -873,9 +873,15 @@ extension Ghostty {
                 guard let appState = self.appState(fromView: surfaceView) else { return }
                 guard appState.config.windowDecorations else {
                     let alert = NSAlert()
-                    alert.messageText = "Tabs are disabled"
-                    alert.informativeText = "Enable window decorations to use tabs"
-                    alert.addButton(withTitle: "OK")
+                    alert.messageText = String(
+                        localized: "Tabs are disabled",
+                        comment: "Alert title shown when a new tab cannot be created."
+                    )
+                    alert.informativeText = String(
+                        localized: "Enable window decorations to use tabs",
+                        comment: "Explanation in the tabs-disabled alert."
+                    )
+                    alert.addButton(withTitle: String(localized: "OK"))
                     alert.alertStyle = .warning
                     _ = alert.runModal()
                     return
@@ -1558,11 +1564,11 @@ extension Ghostty {
                 if actions.contains(.notify) {
                     let title: String
                     if v.exit_code < 0 {
-                        title = "Command Finished"
+                        title = String(localized: "Command Finished")
                     } else if v.exit_code == 0 {
-                        title = "Command Succeeded"
+                        title = String(localized: "Command Succeeded")
                     } else {
-                        title = "Command Failed"
+                        title = String(localized: "Command Failed")
                     }
 
                     let body: String
@@ -1574,9 +1580,11 @@ extension Ghostty {
                         )
                     )
                     if v.exit_code < 0 {
-                        body = "Command took \(formattedDuration)."
+                        body = String(localized: "Command took \(formattedDuration).")
                     } else {
-                        body = "Command took \(formattedDuration) and exited with code \(v.exit_code)."
+                        body = String(
+                            localized: "Command took \(formattedDuration) and exited with code \(v.exit_code)."
+                        )
                     }
 
                     showDesktopNotification(

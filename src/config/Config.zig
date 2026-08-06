@@ -8757,10 +8757,10 @@ pub const RepeatableCommand = struct {
         try self.value.ensureUnusedCapacity(alloc, inputpkg.command.defaults.len);
         try self.value_c.ensureUnusedCapacity(alloc, inputpkg.command.defaults.len);
         for (inputpkg.command.defaults) |cmd| {
-            // Translation is currently a GTK-only feature. In particular,
-            // translating these shared strings for the embedded runtime gives
-            // the macOS app a localized command palette in an otherwise
-            // unlocalized UI.
+            // GTK translates default commands while initializing the config.
+            // Embedded runtimes keep the source strings; macOS translates them
+            // later at the C/Swift bridge, where missing entries fall back to
+            // the source value.
             const localized = if (comptime build_config.app_runtime == .gtk)
                 cmd.translated()
             else

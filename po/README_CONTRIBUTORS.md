@@ -92,5 +92,40 @@ C functions that can be called either by Zig code directly, or by the GTK builde
 
 ## macOS
 
-> [!NOTE]
-> The localization system is not yet implemented for macOS.
+The native macOS UI uses Apple String Catalogs while core command metadata keeps
+using gettext. English is the development and fallback language.
+
+- `macos/Sources/App/macOS/Localizable.xcstrings` contains Swift, SwiftUI,
+  AppKit, App Intents, notification, and accessibility strings.
+- `macos/Sources/App/macOS/InfoPlist.xcstrings` contains system-visible bundle,
+  privacy, document type, Service, and Spotlight text.
+- XIB-backed interfaces keep the XIB in `Base.lproj` and use a same-named
+  `.xcstrings` file in the parent directory. Do not place the XIB itself in the
+  parent directory, because the root resource would bypass localized strings.
+
+The initial Apple locale is `zh-Hans`. Its core gettext counterpart is
+`zh_CN`; locale normalization maps the former to the latter before gettext is
+initialized. Default command titles and descriptions are translated at the
+`ghostty_translate` C/Swift boundary. Missing gettext entries return their
+English msgid, which also prevents user-defined command strings from being
+changed accidentally.
+
+Use `String(localized:)` for dynamically constructed AppKit strings and plain
+localizable literals for SwiftUI. Use `LocalizedStringResource` for App Intents
+and error values. Do not localize configuration keys, AppleScript command names,
+logs, CLI output, paths, terminal contents, keyboard shortcuts, or user-provided
+titles.
+
+After adding or changing macOS strings, export or update the catalogs in Xcode,
+complete the `zh-Hans` values, and run:
+
+```console
+$ xcrun python3 .github/scripts/check-macos-localizations.py
+$ zig build update-translations
+$ .github/scripts/check-translations.sh
+```
+
+The first check compiles every catalog with `xcstringstool`, rejects missing or
+unfinished `zh-Hans` values, and verifies that catalog-backed XIBs remain in
+`Base.lproj`. The gettext check also requires every `src/input/command.zig`
+entry in `zh_CN.po` to be translated and non-fuzzy.

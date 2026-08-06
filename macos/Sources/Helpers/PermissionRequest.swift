@@ -29,7 +29,7 @@ class PermissionRequest {
         _ key: String,
         message: String,
         informative: String = "",
-        allowText: String = "Allow",
+        allowText: String = String(localized: "Allow", comment: "Permission dialog allow button"),
         allowDuration: AllowDuration = .once,
         rememberDuration: Duration? = .seconds(86400),
         window: NSWindow? = nil,
@@ -48,7 +48,9 @@ class PermissionRequest {
 
         // Add buttons (they appear in reverse order)
         alert.addButton(withTitle: allowText)
-        alert.addButton(withTitle: "Don't Allow")
+        alert.addButton(withTitle: String(
+            localized: "Don't Allow",
+            comment: "Permission dialog deny button"))
 
         // Create checkbox for remembering if duration is provided
         var checkbox: NSButton?
@@ -162,22 +164,33 @@ class PermissionRequest {
     private static func formatRememberText(for duration: Duration) -> String {
         let seconds = duration.timeInterval
 
-        // Warning: this probably isn't localization friendly at all so we're
-        // going to have to redo this for that.
         switch seconds {
         case 0..<60:
-            return "Remember my decision for \(Int(seconds)) seconds"
+            let count = Int(seconds)
+            if count == 1 {
+                return String(localized: "Remember my decision for one second")
+            }
+            return String(localized: "Remember my decision for \(count) seconds")
         case 60..<3600:
             let minutes = Int(seconds / 60)
-            return "Remember my decision for \(minutes) minute\(minutes == 1 ? "" : "s")"
+            if minutes == 1 {
+                return String(localized: "Remember my decision for one minute")
+            }
+            return String(localized: "Remember my decision for \(minutes) minutes")
         case 3600..<86400:
             let hours = Int(seconds / 3600)
-            return "Remember my decision for \(hours) hour\(hours == 1 ? "" : "s")"
+            if hours == 1 {
+                return String(localized: "Remember my decision for one hour")
+            }
+            return String(localized: "Remember my decision for \(hours) hours")
         case 86400:
-            return "Remember my decision for one day"
+            return String(localized: "Remember my decision for one day")
         default:
             let days = Int(seconds / 86400)
-            return "Remember my decision for \(days) day\(days == 1 ? "" : "s")"
+            if days == 1 {
+                return String(localized: "Remember my decision for one day")
+            }
+            return String(localized: "Remember my decision for \(days) days")
         }
     }
 

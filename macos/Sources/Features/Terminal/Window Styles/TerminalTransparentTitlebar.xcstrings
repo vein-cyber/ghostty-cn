@@ -1,0 +1,17 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "QvC-M9-y7g.title": {
+      "shouldTranslate": false,
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "new",
+            "value": "👻 Ghostty"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

@@ -16,25 +16,25 @@ enum TerminalTabColor: Int, CaseIterable, Codable {
     var localizedName: String {
         switch self {
         case .none:
-            return "None"
+            return String(localized: "None", comment: "No tab color")
         case .blue:
-            return "Blue"
+            return String(localized: "Blue", comment: "Tab color")
         case .purple:
-            return "Purple"
+            return String(localized: "Purple", comment: "Tab color")
         case .pink:
-            return "Pink"
+            return String(localized: "Pink", comment: "Tab color")
         case .red:
-            return "Red"
+            return String(localized: "Red", comment: "Tab color")
         case .orange:
-            return "Orange"
+            return String(localized: "Orange", comment: "Tab color")
         case .yellow:
-            return "Yellow"
+            return String(localized: "Yellow", comment: "Tab color")
         case .green:
-            return "Green"
+            return String(localized: "Green", comment: "Tab color")
         case .teal:
-            return "Teal"
+            return String(localized: "Teal", comment: "Tab color")
         case .graphite:
-            return "Graphite"
+            return String(localized: "Graphite", comment: "Tab color")
         }
     }
 

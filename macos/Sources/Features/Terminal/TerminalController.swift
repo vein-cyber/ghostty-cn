@@ -421,9 +421,9 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
         if let fullscreenStyle = parentController.fullscreenStyle,
            fullscreenStyle.isFullscreen && !fullscreenStyle.supportsTabs {
             let alert = NSAlert()
-            alert.messageText = "Cannot Create New Tab"
-            alert.informativeText = "New tabs are unsupported while in non-native fullscreen. Exit fullscreen and try again."
-            alert.addButton(withTitle: "OK")
+            alert.messageText = String(localized: "Cannot Create New Tab")
+            alert.informativeText = String(localized: "New tabs are unsupported while in non-native fullscreen. Exit fullscreen and try again.")
+            alert.addButton(withTitle: String(localized: "OK"))
             alert.alertStyle = .warning
             alert.beginSheetModal(for: parent)
             return nil
@@ -959,10 +959,10 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
         }
 
         let alert = NSAlert()
-        alert.messageText = "Close All Windows?"
-        alert.informativeText = "All terminal sessions will be terminated."
-        alert.addButton(withTitle: "Close All Windows")
-        alert.addButton(withTitle: "Cancel")
+        alert.messageText = String(localized: "Close All Windows?")
+        alert.informativeText = String(localized: "All terminal sessions will be terminated.")
+        alert.addButton(withTitle: String(localized: "Close All Windows"))
+        alert.addButton(withTitle: String(localized: "Cancel"))
         alert.alertStyle = .warning
         alert.beginSheetModal(for: confirmWindow, completionHandler: { response in
             if response == .alertFirstButtonReturn {
@@ -1292,8 +1292,8 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
         }
 
         confirmClose(
-            messageText: "Close Tab?",
-            informativeText: "The terminal still has a running process. If you close the tab the process will be killed."
+            messageText: String(localized: "Close Tab?"),
+            informativeText: String(localized: "The terminal still has a running process. If you close the tab the process will be killed.")
         ) {
             self.closeTabImmediately()
         }
@@ -1324,8 +1324,8 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
         }
 
         confirmClose(
-            messageText: "Close Other Tabs?",
-            informativeText: "At least one other tab still has a running process. If you close the tab the process will be killed."
+            messageText: String(localized: "Close Other Tabs?"),
+            informativeText: String(localized: "At least one other tab still has a running process. If you close the tab the process will be killed.")
         ) {
             self.closeOtherTabsImmediately()
         }
@@ -1353,8 +1353,8 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
         }
 
         confirmClose(
-            messageText: "Close Tabs on the Right?",
-            informativeText: "At least one tab to the right still has a running process. If you close the tab the process will be killed."
+            messageText: String(localized: "Close Tabs on the Right?"),
+            informativeText: String(localized: "At least one tab to the right still has a running process. If you close the tab the process will be killed.")
         ) {
             self.closeTabsOnTheRightImmediately()
         }
@@ -1383,8 +1383,8 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
         // We call confirmClose on the proper controller so the alert is
         // attached to the window that needs confirmation.
         confirmController.confirmClose(
-            messageText: "Close Window?",
-            informativeText: "All terminal sessions in this window will be terminated.",
+            messageText: String(localized: "Close Window?"),
+            informativeText: String(localized: "All terminal sessions in this window will be terminated."),
         ) {
             self.closeWindowImmediately()
         }

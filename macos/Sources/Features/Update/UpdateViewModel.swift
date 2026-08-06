@@ -13,27 +13,37 @@ class UpdateViewModel: ObservableObject {
         case .idle:
             return ""
         case .permissionRequest:
-            return "Enable Automatic Updates?"
+            return String(localized: "Enable Automatic Updates?")
         case .checking:
-            return "Checking for Updates…"
+            return String(localized: "Checking for Updates…")
         case .updateAvailable(let update):
             let version = update.appcastItem.displayVersionString
             if !version.isEmpty {
-                return "Update Available: \(version)"
+                return String(localized: "Update Available: \(version)")
             }
-            return "Update Available"
+            return String(localized: "Update Available")
         case .downloading(let download):
             if let expectedLength = download.expectedLength, expectedLength > 0 {
                 let progress = Double(download.progress) / Double(expectedLength)
-                return String(format: "Downloading: %.0f%%", progress * 100)
+                return String(
+                    format: String(localized: "Downloading: %.0f%%"),
+                    locale: .current,
+                    progress * 100
+                )
             }
-            return "Downloading…"
+            return String(localized: "Downloading…")
         case .extracting(let extracting):
-            return String(format: "Preparing: %.0f%%", extracting.progress * 100)
+            return String(
+                format: String(localized: "Preparing: %.0f%%"),
+                locale: .current,
+                extracting.progress * 100
+            )
         case let .installing(install):
-            return install.appcastItem != nil ? "Restart to Complete Update" : "Installing…"
+            return install.appcastItem != nil
+                ? String(localized: "Restart to Complete Update")
+                : String(localized: "Installing…")
         case .notFound:
-            return "No Updates Available"
+            return String(localized: "No Updates Available")
         case .error(let err):
             return err.error.localizedDescription
         }
@@ -44,9 +54,9 @@ class UpdateViewModel: ObservableObject {
     var maxWidthText: String {
         switch state {
         case .downloading:
-            return "Downloading: 100%"
+            return String(localized: "Downloading: 100%")
         case .extracting:
-            return "Preparing: 100%"
+            return String(localized: "Preparing: 100%")
         default:
             return text
         }
@@ -83,25 +93,26 @@ class UpdateViewModel: ObservableObject {
         case .idle:
             return ""
         case .permissionRequest:
-            return "Configure automatic update preferences"
+            return String(localized: "Configure automatic update preferences")
         case .checking:
-            return "Please wait while we check for available updates"
+            return String(localized: "Please wait while we check for available updates")
         case .updateAvailable(let update):
-            return update.releaseNotes?.label ?? "Download and install the latest version"
+            return update.releaseNotes?.label
+                ?? String(localized: "Download and install the latest version")
         case .downloading:
-            return "Downloading the update package"
+            return String(localized: "Downloading the update package")
         case .extracting:
-            return "Extracting and preparing the update"
+            return String(localized: "Extracting and preparing the update")
         case let .installing(install):
             if let item = install.appcastItem {
-                return "The update is ready. Version: \(item.displayVersionString)"
+                return String(localized: "The update is ready. Version: \(item.displayVersionString)")
             } else {
-                return "Installing update and preparing to restart"
+                return String(localized: "Installing update and preparing to restart")
             }
         case .notFound:
-            return "You are running the latest version"
+            return String(localized: "You are running the latest version")
         case .error:
-            return "An error occurred during the update process"
+            return String(localized: "An error occurred during the update process")
         }
     }
 
@@ -379,9 +390,9 @@ enum UpdateState: Equatable {
 
         var label: String {
             switch self {
-            case .commit: return "View GitHub Commit"
-            case .compareTip: return "Changes Since This Tip Release"
-            case .tagged: return "View Release Notes"
+            case .commit: return String(localized: "View GitHub Commit")
+            case .compareTip: return String(localized: "Changes Since This Tip Release")
+            case .tagged: return String(localized: "View Release Notes")
             }
         }
     }

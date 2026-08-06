@@ -30,8 +30,11 @@ extension Ghostty {
         ]
 
         init(cValue: ghostty_command_s) {
-            self.title = String(cString: cValue.title)
-            self.description = String(cString: cValue.description)
+            // Default command metadata is maintained by libghostty and translated
+            // through gettext. User-defined command strings are safe here too:
+            // gettext returns the original value when no translation exists.
+            self.title = String(cString: ghostty_translate(cValue.title))
+            self.description = String(cString: ghostty_translate(cValue.description))
             self.action = String(cString: cValue.action)
             self.actionKey = String(cString: cValue.action_key)
         }

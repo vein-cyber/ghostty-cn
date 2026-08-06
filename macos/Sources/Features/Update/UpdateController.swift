@@ -9,6 +9,10 @@ import SwiftUI
 /// for managing updates with Ghostty's custom driver and delegate. It handles
 /// initialization, starting the updater, and provides the check for updates action.
 class UpdateController {
+    /// ghostty-cn does not publish a separately signed update feed yet.
+    /// Keep Sparkle disabled so an upstream build cannot replace this fork.
+    static let isEnabled = false
+
     private(set) var updater: SPUUpdater
     private let userDriver: UpdateDriver
 
@@ -40,6 +44,12 @@ class UpdateController {
     /// This must be called before the updater can check for updates. If starting fails,
     /// the error will be shown to the user.
     func startUpdater() {
+        guard Self.isEnabled else {
+            updater.automaticallyChecksForUpdates = false
+            updater.automaticallyDownloadsUpdates = false
+            return
+        }
+
         do {
             try updater.start()
         } catch {
@@ -60,6 +70,8 @@ class UpdateController {
     ///
     /// This is typically connected to a menu item action.
     @objc func checkForUpdates() {
+        guard Self.isEnabled else { return }
+
         // If we're already idle, then just check for updates immediately.
         if viewModel.state == .idle {
             updater.checkForUpdates()
@@ -78,8 +90,8 @@ class UpdateController {
             )
             accessoryView.frame = .init(origin: .zero, size: accessoryView.fittingSize)
             alert.accessoryView = accessoryView
-            alert.addButton(withTitle: "Restart Now")
-            alert.addButton(withTitle: "Restart Later")
+            alert.addButton(withTitle: String(localized: "Restart Now"))
+            alert.addButton(withTitle: String(localized: "Restart Later"))
                 .keyEquivalent = .init([KeyboardShortcut(.escape).key.character])
             switch alert.runModal() {
             case .alertFirstButtonReturn:
@@ -107,7 +119,7 @@ class UpdateController {
     /// - Returns: Whether the menu item should be enabled
     func validateMenuItem(_ item: NSMenuItem) -> Bool {
         if item.action == #selector(checkForUpdates) {
-            return updater.canCheckForUpdates
+            return Self.isEnabled && updater.canCheckForUpdates
         }
         return true
     }

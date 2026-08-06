@@ -93,7 +93,7 @@ struct TerminalCommandPaletteView: View {
             // convey it'll go all the way through.
             let title: String
             if case .updateAvailable = updateViewModel.state {
-                title = "Update Ghostty and Restart"
+                title = String(localized: "Update Ghostty and Restart")
             } else {
                 title = updateViewModel.text
             }
@@ -111,8 +111,8 @@ struct TerminalCommandPaletteView: View {
 
         if updateViewModel.state.isCancellable {
             options.append(CommandOption(
-                title: "Cancel or Skip Update",
-                description: "Dismiss the current update process"
+                title: String(localized: "Cancel or Skip Update"),
+                description: String(localized: "Dismiss the current update process")
             ) {
                 updateViewModel.state.cancel()
             })
@@ -154,7 +154,7 @@ struct TerminalCommandPaletteView: View {
                 } else if !terminalTitle.isEmpty {
                     displayTitle = terminalTitle
                 } else {
-                    displayTitle = "Untitled"
+                    displayTitle = String(localized: "Untitled")
                 }
                 let pwd = surface.pwd?.abbreviatedPath
                 let subtitle: String? = if let pwd, !displayTitle.contains(pwd) {
@@ -164,7 +164,7 @@ struct TerminalCommandPaletteView: View {
                 }
 
                 return CommandOption(
-                    title: "Focus: \(displayTitle)",
+                    title: String(localized: "Focus: \(displayTitle)"),
                     subtitle: subtitle,
                     leadingIcon: "rectangle.on.rectangle",
                     leadingColor: displayColor?.displayColor.map { Color($0) },
