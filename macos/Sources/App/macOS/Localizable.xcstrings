@@ -1,6 +1,156 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Configuration saved and reloaded.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置已保存并重新加载。"
+          }
+        }
+      }
+    },
+    "Continue": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "继续"
+          }
+        }
+      }
+    },
+    "Could not create the configuration backup: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法创建配置备份：%@"
+          }
+        }
+      }
+    },
+    "Could not save the configuration: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法保存配置：%@"
+          }
+        }
+      }
+    },
+    "Ghostty Settings": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghostty 设置"
+          }
+        }
+      }
+    },
+    "Ghostty will create a backup, preserve comments and unsupported options, and move supported settings into an automatically managed section.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghostty 将先创建备份，保留注释和不受支持的选项，并把受支持的设置移入自动管理的区域。"
+          }
+        }
+      }
+    },
+    "Let Visual Settings Manage Your Configuration?": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要让可视化设置管理配置吗？"
+          }
+        }
+      }
+    },
+    "Reinstall Ghostty and try again.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请重新安装 Ghostty 后再试。"
+          }
+        }
+      }
+    },
+    "Saving was cancelled.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已取消保存。"
+          }
+        }
+      }
+    },
+    "Settings resources are missing.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置资源缺失。"
+          }
+        }
+      }
+    },
+    "The configuration path is unavailable.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法获取配置文件路径。"
+          }
+        }
+      }
+    },
+    "The generated configuration is too large.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "生成的配置过大。"
+          }
+        }
+      }
+    },
+    "The settings data is invalid.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置数据无效。"
+          }
+        }
+      }
+    },
+    "The settings editor returned an invalid configuration key.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置编辑器返回了无效的配置键。"
+          }
+        }
+      }
+    },
+    "The settings editor returned an invalid line: %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置编辑器返回了无效的配置行：%@"
+          }
+        }
+      }
+    },
     "-/%llu": {
       "localizations": {
         "zh-Hans": {

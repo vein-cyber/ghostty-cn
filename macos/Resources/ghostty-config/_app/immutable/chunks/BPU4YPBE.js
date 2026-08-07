@@ -1,0 +1,1 @@
+function h(c,e,b,m){return i=>{const n=3*c,t=3*(b-c)-n,r=1-n-t,o=3*e,u=3*(m-e)-o,p=1-o-u,x=s=>((r*s+t)*s+n)*s,y=s=>((p*s+u)*s+o)*s,d=s=>(3*r*s+2*t)*s+n;let a=i;for(let s=0;s<5;s+=1){const f=x(a)-i,l=d(a);if(Math.abs(l)<1e-6)break;a-=f/l,a=Math.max(0,Math.min(1,a))}return y(a)}}const M=h(.4,0,.2,1),q={y:-44,duration:250,easing:M};export{M as a,q as s};

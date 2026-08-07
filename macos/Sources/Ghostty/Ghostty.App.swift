@@ -129,11 +129,24 @@ extension Ghostty {
             app.openConfig()
         }
 
-        func openConfig() {
+        var configFileURL: URL? {
             let str = configPath ?? Ghostty.AllocatedString(ghostty_config_open_path()).string
-            guard !str.isEmpty else { return }
+            guard !str.isEmpty else { return nil }
+            return URL(fileURLWithPath: str)
+        }
+
+        func openConfig() {
             #if os(macOS)
-            let fileURL = URL(fileURLWithPath: str).absoluteString
+            SettingsController.shared.show(for: self)
+            #else
+            fatalError("Unsupported platform for opening config file")
+            #endif
+        }
+
+        func openConfigFile() {
+            guard let configFileURL else { return }
+            #if os(macOS)
+            let fileURL = configFileURL.absoluteString
             var action = ghostty_action_open_url_s()
             action.kind = GHOSTTY_ACTION_OPEN_URL_KIND_TEXT
             fileURL.withCString { cStr in

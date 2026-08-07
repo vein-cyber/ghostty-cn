@@ -1,0 +1,782 @@
+diff --git a/src/lib/components/NativeToolbar.svelte b/src/lib/components/NativeToolbar.svelte
+new file mode 100644
+index 0000000..6575a15
+--- /dev/null
++++ b/src/lib/components/NativeToolbar.svelte
+@@ -0,0 +1,142 @@
++<script lang="ts">
++    import {onMount} from "svelte";
++
++    import Button from "$lib/components/Button.svelte";
++    import {registry} from "$lib/settings/registry";
++    import {diff, load} from "$lib/stores/config.svelte";
++    import {error, success} from "$lib/stores/toasts.svelte";
++    import {
++        isNativeHost,
++        observeNativeConfig,
++        observeNativeResult,
++        openNativeConfigFile,
++        requestNativeConfig,
++        saveNativeConfig
++    } from "$lib/native";
++    import {parse, serialize} from "$lib/utils/parse";
++    import {isChinese} from "$lib/i18n";
++
++    const nativeHost = isNativeHost();
++    const excludedKeys = new Set([
++        "auto-update",
++        "auto-update-channel",
++        "config-default-files",
++        "config-file"
++    ]);
++    const managedKeys = Object.values(registry)
++        .map(setting => setting.key)
++        .filter(key => !excludedKeys.has(key));
++
++    let configPath = $state("");
++    let saving = $state(false);
++
++    const strings = $derived.by(() => {
++        return isChinese() ? {
++            apply: "应用并重新加载",
++            edit: "编辑原始配置",
++            loaded: "已载入当前 Ghostty 配置",
++            loading: "正在载入当前配置…",
++            saveFailed: "保存配置失败",
++            saving: "正在保存…"
++        } : {
++            apply: "Apply & Reload",
++            edit: "Edit Raw Config",
++            loaded: "Current Ghostty configuration loaded",
++            loading: "Loading current configuration…",
++            saveFailed: "Failed to save configuration",
++            saving: "Saving…"
++        };
++    });
++
++    onMount(() => {
++        if (!nativeHost) return;
++        document.documentElement.classList.add("ghostty-native-host");
++
++        const stopConfig = observeNativeConfig(({content, path}) => {
++            try {
++                load(parse(content));
++                configPath = path;
++                success(strings.loaded);
++            }
++            catch {
++                error(strings.saveFailed);
++            }
++        });
++        const stopResult = observeNativeResult(({message, ok}) => {
++            saving = false;
++            if (ok) success(message);
++            else error(message);
++        });
++
++        requestNativeConfig();
++        return () => {
++            document.documentElement.classList.remove("ghostty-native-host");
++            stopConfig();
++            stopResult();
++        };
++    });
++
++    function apply() {
++        if (saving) return;
++        saving = true;
++
++        const values = diff();
++        for (const key of excludedKeys) delete values[key];
++        saveNativeConfig(serialize(values, false), managedKeys);
++    }
++</script>
++
++{#if nativeHost}
++    <div class="native-toolbar">
++        <div class="config-path" title={configPath}>{configPath || strings.loading}</div>
++        <div class="actions">
++            <Button onclick={openNativeConfigFile}>{strings.edit}</Button>
++            <Button primary onclick={apply} disabled={saving}>{saving ? strings.saving : strings.apply}</Button>
++        </div>
++    </div>
++{/if}
++
++<style>
++.native-toolbar {
++    align-items: center;
++    background: var(--bg-level-2);
++    border-top: 1px solid var(--border-level-2);
++    display: flex;
++    flex: 0 0 50px;
++    gap: 12px;
++    justify-content: space-between;
++    padding: 0 14px;
++}
++
++.config-path {
++    color: var(--font-color-muted);
++    font-size: 0.75rem;
++    min-width: 0;
++    overflow: hidden;
++    text-overflow: ellipsis;
++    white-space: nowrap;
++}
++
++.actions {
++    display: flex;
++    flex: none;
++    gap: 8px;
++}
++
++:global(html.ghostty-native-host body) {
++    overflow: hidden;
++}
++
++:global(html.ghostty-native-host .app-window) {
++    border: 0;
++    border-radius: 0;
++    box-shadow: none;
++    height: 100%;
++    max-width: none;
++    width: 100%;
++}
++
++:global(html.ghostty-native-host .window-actions-container) {
++    display: none !important;
++}
++</style>
+diff --git a/src/lib/components/SettingsSearch.svelte b/src/lib/components/SettingsSearch.svelte
+index 8294e83..caf20e7 100644
+--- a/src/lib/components/SettingsSearch.svelte
++++ b/src/lib/components/SettingsSearch.svelte
+@@ -8,6 +8,7 @@
+     import Tab from "$lib/components/Tab.svelte";
+
+     import {getGroupedResults, getHighlightParts, getResults, hasGroupedResults, hasResults, searchState, setQuery, type SearchResult} from "$lib/stores/search.svelte";
++    import {isChinese, localizeLabel} from "$lib/i18n";
+
+
+     const {children}: {children: Snippet} = $props();
+@@ -119,8 +120,8 @@
+         value={searchState.query}
+         oninput={handleSearchInput}
+         onkeydown={handleSearchKeydown}
+-        placeholder="Search"
+-        aria-label="Search"
++        placeholder={isChinese() ? "搜索" : "Search"}
++        aria-label={isChinese() ? "搜索" : "Search"}
+         autocomplete="off"
+         spellcheck={false}
+         bind:this={inputElement}
+@@ -130,7 +131,7 @@
+         <button
+             class="search-clear-button"
+             type="button"
+-            title="Clear search"
++            title={isChinese() ? "清除搜索" : "Clear search"}
+             transition:scale={{duration: 150}}
+             onclick={() => {
+                 setQuery("");
+@@ -168,7 +169,7 @@
+                                     <img src={category.categoryIcon} alt={`${category.categoryName} Settings`} />
+                                 {/if}
+                             {/snippet}
+-                            {category.categoryName}
++                            {localizeLabel(category.categoryName)}
+                         </Tab>
+                         <div class="search-category-results">
+                             {#each category.results as result (result.routeKey)}
+@@ -185,7 +186,7 @@
+                                     }}
+                                 >
+                                     <span class="search-result-name">
+-                                        {#each getHighlightParts(result.settingName) as part, i (`${result.routeKey}:name:${i}`)}
++                                        {#each getHighlightParts(localizeLabel(result.settingName)) as part, i (`${result.routeKey}:name:${i}`)}
+                                             {#if part.matched}
+                                                 <strong>{part.text}</strong>
+                                             {:else}
+@@ -196,7 +197,7 @@
+                                     <span class="search-result-meta">
+                                         {#if result.groupName}
+                                             <span>
+-                                                {#each getHighlightParts(result.groupName) as part, i (`${result.routeKey}:group:${i}`)}
++                                                {#each getHighlightParts(localizeLabel(result.groupName)) as part, i (`${result.routeKey}:group:${i}`)}
+                                                     {#if part.matched}
+                                                         <strong>{part.text}</strong>
+                                                     {:else}
+@@ -239,8 +240,8 @@
+                         <path d="M0 0h56v56H0z" fill="none" />
+                         <path fill="currentColor" d="M23.957 41.77a18.02 18.02 0 0 0 10.477-3.376l11.109 11.11a2.66 2.66 0 0 0 1.898.773c1.524 0 2.625-1.172 2.625-2.672c0-.703-.234-1.359-.75-1.874L38.277 34.668c2.32-3.047 3.703-6.82 3.703-10.922c0-9.914-8.109-18.023-18.023-18.023c-9.937 0-18.023 8.109-18.023 18.023S14.02 41.77 23.957 41.77m0-3.891c-7.758 0-14.133-6.398-14.133-14.133S16.2 9.613 23.957 9.613c7.734 0 14.133 6.399 14.133 14.133c0 7.735-6.399 14.133-14.133 14.133" />
+                     </svg>
+-                    <h2>No Results</h2>
+-                    <p class="search-empty">No results for<span>"{searchState.query}"</span></p>
++                    <h2>{isChinese() ? "没有结果" : "No Results"}</h2>
++                    <p class="search-empty">{isChinese() ? "没有匹配项：" : "No results for"}<span>"{searchState.query}"</span></p>
+                 </div>
+
+             {/if}
+diff --git a/src/lib/components/settings/Item.svelte b/src/lib/components/settings/Item.svelte
+index 1e1d6a8..e284210 100644
+--- a/src/lib/components/settings/Item.svelte
++++ b/src/lib/components/settings/Item.svelte
+@@ -6,6 +6,7 @@
+     import Badge from "../Badge.svelte";
+     import {searchState} from "$lib/stores/search.svelte";
+     import {setSetting} from "$lib/contexts";
++    import {isChinese} from "$lib/i18n";
+
+     interface Props {
+         name?: string;
+@@ -24,7 +25,7 @@
+     }
+
+     const {name = "", note = "", platform, since, description, settingId, children, onReset, isNonDefault = false, inline = true, themeBadge}: Props = $props();
+-    const tooltipAttachment = createTooltipAttachment("Reset to default");
++    const tooltipAttachment = createTooltipAttachment(isChinese() ? "恢复默认值" : "Reset to default");
+
+
+      const platformLabelMap: Record<GhosttyPlatform, string> = {
+@@ -50,7 +51,7 @@
+         const platformBadge = getPlatformBadgeLabel(platformLabels);
+         if (platformBadge) badges.push({label: platformBadge, type: "platform"});
+         if (since) badges.push({label: since, type: "version"});
+-        if (themeBadge) badges.push({label: "From theme", type: "theme"});
++        if (themeBadge) badges.push({label: isChinese() ? "来自主题" : "From theme", type: "theme"});
+         return badges;
+     });
+
+@@ -111,7 +112,7 @@
+                         <button
+                             class="reset-button"
+                             onclick={onReset}
+-                            title="Reset to default"
++                            title={isChinese() ? "恢复默认值" : "Reset to default"}
+                             type="button"
+                             {@attach tooltipAttachment}
+                         >
+@@ -129,7 +130,7 @@
+         {#if description}
+             <div class="row-right">
+                 {#if inline}<div class="setting">{@render children()}</div>{/if}
+-                <button type="button" class="setting-info" aria-label="Full description" onclick={() => alert({title: name, message: description})}>
++                <button type="button" class="setting-info" aria-label={isChinese() ? "完整说明" : "Full description"} onclick={() => alert({title: name, message: description})}>
+                     <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 56 56">
+                         <path d="M0 0h56v56H0z" fill="none" />
+                         <path fill="currentColor" d="M28 51.906c13.055 0 23.906-10.828 23.906-23.906c0-13.055-10.875-23.906-23.93-23.906C14.899 4.094 4.095 14.945 4.095 28c0 13.078 10.828 23.906 23.906 23.906m0-3.984C16.937 47.922 8.1 39.062 8.1 28c0-11.04 8.813-19.922 19.876-19.922c11.039 0 19.921 8.883 19.945 19.922c.023 11.063-8.883 19.922-19.922 19.922m-.211-28.266c1.71 0 3.047-1.36 3.047-3.047c0-1.71-1.336-3.07-3.047-3.07s-3.047 1.36-3.047 3.07a3.026 3.026 0 0 0 3.047 3.047m-3.914 21.235h9.562c.961 0 1.711-.68 1.711-1.641c0-.914-.75-1.64-1.71-1.64H30.53V25.68c0-1.266-.656-2.11-1.828-2.11h-4.43c-.937 0-1.687.727-1.687 1.64c0 .962.75 1.642 1.687 1.642h2.532v10.757h-2.93c-.938 0-1.688.727-1.688 1.641c0 .96.75 1.64 1.688 1.64" />
+@@ -317,4 +318,4 @@
+         box-shadow: 0 0 0 1px rgba(152, 217, 255, 0);
+     }
+ }
+-</style>
+\ No newline at end of file
++</style>
+diff --git a/src/lib/i18n.ts b/src/lib/i18n.ts
+new file mode 100644
+index 0000000..2840953
+--- /dev/null
++++ b/src/lib/i18n.ts
+@@ -0,0 +1,245 @@
++import {browser} from "$app/environment";
++
++const zhHansLabels: Record<string, string> = {
++    "Abnormal command exit runtime": "异常命令退出判定时长",
++    "Additional config file": "附加配置文件",
++    "Allow desktop notifications": "允许桌面通知",
++    "Allow mouse reporting": "允许鼠标事件报告",
++    "Allow shift with mouse click": "允许 Shift 配合鼠标点击",
++    "Allow shaders to animate": "允许着色器动画",
++    "Allow terminal to read clipboard": "允许终端读取剪贴板",
++    "Allow terminal to write clipboard": "允许终端写入剪贴板",
++    "Alpha blending colorspace": "Alpha 混合色彩空间",
++    "Animation duration": "动画时长",
++    "App Icon": "应用图标",
++    "App notifications": "应用内通知",
++    "Appearance": "外观",
++    "Application": "应用",
++    "Async backend": "异步后端",
++    "Auto secure input": "自动启用安全输入",
++    "Auto update": "自动更新",
++    "Auto-balance window padding": "自动平衡窗口边距",
++    "Auto-generate missing palette colors": "自动生成缺失的调色板颜色",
++    "Automatically link URLs": "自动识别网址链接",
++    "Autohide": "自动隐藏",
++    "Background blur": "背景模糊",
++    "Background color": "背景颜色",
++    "Background image": "背景图像",
++    "Background image fit": "背景图像适应方式",
++    "Background image opacity": "背景图像不透明度",
++    "Background image position": "背景图像位置",
++    "Background opacity": "背景不透明度",
++    "Base Colors": "基础颜色",
++    "Base font size": "基础字号",
++    "Bell": "提示铃",
++    "Bell audio file": "提示铃音频文件",
++    "Bell audio volume": "提示铃音量",
++    "Bell features": "提示铃功能",
++    "Bold text color": "粗体文字颜色",
++    "Box thickness": "方框字符粗细",
++    "CSI 21 title reporting": "CSI 21 标题报告",
++    "Cell height": "单元格高度",
++    "Cell width": "单元格宽度",
++    "Clear selection on copy": "复制后清除选择",
++    "Clear selection on typing": "输入时清除选择",
++    "Clipboard": "剪贴板",
++    "Color Palette": "调色板",
++    "Color theme": "配色主题",
++    "Colors": "颜色",
++    "Command Notifications": "命令通知",
++    "Command to run on first launch": "首次启动时运行的命令",
++    "Command to run on launch": "启动时运行的命令",
++    "Confirm when closing a surface": "关闭终端界面时确认",
++    "Confirm when pasting unsafely": "不安全粘贴时确认",
++    "Copy on select": "选择时复制",
++    "Cursor": "光标",
++    "Cursor blink style": "光标闪烁方式",
++    "Cursor color": "光标颜色",
++    "Cursor height": "光标高度",
++    "Cursor opacity": "光标不透明度",
++    "Cursor style": "光标样式",
++    "Cursor thickness": "光标粗细",
++    "Custom css file": "自定义 CSS 文件",
++    "Custom shader": "自定义着色器",
++    "Delay before auto quitting": "自动退出前的延迟",
++    "Directory to use after startup": "启动后使用的目录",
++    "Display": "显示",
++    "Dock drop behavior": "拖放到程序坞图标时的行为",
++    "Enable AppleScript support": "启用 AppleScript 支持",
++    "Enable click to move cursor": "允许点击移动光标",
++    "Enable vsync": "启用垂直同步",
++    "Environment variables": "环境变量",
++    "Faint text opacity": "浅色文字不透明度",
++    "Focus splits on mouse move": "鼠标移动时聚焦分屏",
++    "Font Families": "字族",
++    "Font Styles": "字体样式",
++    "Font Variations": "字体变体",
++    "Font baseline": "字体基线",
++    "Font family for bold italic text": "粗斜体文字字族",
++    "Font family for bold text": "粗体文字字族",
++    "Font family for italic text": "斜体文字字族",
++    "Font ligature settings": "字体连字设置",
++    "Font shaping breaks": "字体塑形中断",
++    "Font style for bold italic text": "粗斜体文字样式",
++    "Font style for bold text": "粗体文字样式",
++    "Font style for italic text": "斜体文字样式",
++    "Font variant for bold italic text": "粗斜体文字变体",
++    "Font variant for bold text": "粗体文字变体",
++    "Font variant for italic text": "斜体文字变体",
++    "Fonts": "字体",
++    "Force background opacity on cells.": "强制单元格应用背景不透明度",
++    "Foreground color": "前景颜色",
++    "FreeType load flags": "FreeType 加载标志",
++    "Ghost color": "Ghost 图标颜色",
++    "Grapheme width calculation": "字素宽度计算方式",
++    "Hard fail on startup": "启动失败时直接退出",
++    "Harmonious palette generation": "生成协调调色板",
++    "Hide from dock and switcher": "从程序坞和应用切换器隐藏",
++    "Hide mouse while typing": "输入时隐藏鼠标指针",
++    "Hide titlebar on maximize": "最大化时隐藏标题栏",
++    "Horizontal window padding": "窗口水平边距",
++    "Icon": "图标",
++    "Icon file": "图标文件",
++    "Icon frame": "图标边框",
++    "Image buffer limit (bytes)": "图像缓冲区上限（字节）",
++    "Indicate secure input": "显示安全输入状态",
++    "Inherit font size": "继承字号",
++    "Inherit working directory": "继承工作目录",
++    "Initial input": "初始输入",
++    "Initial window height": "初始窗口高度",
++    "Initial window width": "初始窗口宽度",
++    "Initial window X": "初始窗口横坐标",
++    "Initial window Y": "初始窗口纵坐标",
++    "Keyboard input": "键盘输入",
++    "Keybinds": "快捷键",
++    "Launch as maximized window": "以最大化窗口启动",
++    "Launch in fullscreen mode": "以全屏模式启动",
++    "Link handling": "链接处理",
++    "Load default config file": "加载默认配置文件",
++    "Main font family": "主要字族",
++    "Main font style": "主要字体样式",
++    "Main font variant": "主要字体变体",
++    "Mark bracketed paste as safe": "将括号粘贴视为安全",
++    "Max number of processes": "最大进程数",
++    "Memory limit (bytes)": "内存上限（字节）",
++    "Metric Adjustments": "字体度量调整",
++    "Middle-click action": "鼠标中键操作",
++    "Milliseconds between multi-click": "连续多击间隔（毫秒）",
++    "Minimum contrast": "最低对比度",
++    "Minimum runtime before notifying": "发送通知前的最短运行时间",
++    "Mouse": "鼠标",
++    "Mouse scroll multiplier": "鼠标滚动倍率",
++    "Nerd font icon height": "Nerd Font 图标高度",
++    "New tab position": "新标签页位置",
++    "Notification action": "通知操作",
++    "Notify on command finish": "命令完成时通知",
++    "OSC color report format": "OSC 颜色报告格式",
++    "OpenGL debug": "OpenGL 调试",
++    "Overline position": "上划线位置",
++    "Overline thickness": "上划线粗细",
++    "Palette": "调色板",
++    "Protocol & Compatibility": "协议与兼容性",
++    "Quick Terminal": "快速终端",
++    "Quick terminal layer": "快速终端层级",
++    "Quick terminal namespace": "快速终端命名空间",
++    "Quick terminal size": "快速终端尺寸",
++    "Quit after closing last window": "关闭最后一个窗口后退出",
++    "Repeat background image": "重复背景图像",
++    "Resize in grid cell increments": "按网格单元调整窗口尺寸",
++    "Resize overlay position": "尺寸提示位置",
++    "Response to ENQ": "ENQ 响应",
++    "Right-click action": "右键操作",
++    "Save window state": "保存窗口状态",
++    "Screen color": "图标屏幕颜色",
++    "Screen location": "屏幕位置",
++    "Scroll to bottom on": "滚动到底部的时机",
++    "Scrollbar visibility": "滚动条可见性",
++    "Scrollback buffer size (bytes)": "回滚缓冲区大小（字节）",
++    "Search Colors": "搜索颜色",
++    "Search match background": "搜索匹配项背景",
++    "Search match foreground": "搜索匹配项前景",
++    "Selected match background": "当前搜索匹配项背景",
++    "Selected match foreground": "当前搜索匹配项前景",
++    "Selection background": "选择区域背景",
++    "Selection foreground": "选择区域前景",
++    "Shell integration features": "Shell 集成功能",
++    "Shell integration style": "Shell 集成方式",
++    "Show a window on startup": "启动时显示窗口",
++    "Show link previews": "显示链接预览",
++    "Show progress bars (OSC 9;4)": "显示进度条（OSC 9;4）",
++    "Show resize overlay time": "尺寸提示显示时长",
++    "Show resize overlays": "显示尺寸提示",
++    "Show tab bar": "显示标签栏",
++    "Show the window shadow": "显示窗口阴影",
++    "Show titlebar": "显示标题栏",
++    "Shutdown": "退出",
++    "Single-instance mode": "单实例模式",
++    "Sizing & Resizing": "尺寸与调整",
++    "Split divider color": "分屏分隔线颜色",
++    "Split preserve zoom on navigation": "切换分屏时保持缩放",
++    "Splits inherit working directory": "分屏继承工作目录",
++    "Startup": "启动",
++    "Static title for all windows": "所有窗口使用固定标题",
++    "Strikethrough position": "删除线位置",
++    "Strikethrough thickness": "删除线粗细",
++    "Synthetic styles": "合成字体样式",
++    "TERM environment variable": "TERM 环境变量",
++    "Tab location": "标签栏位置",
++    "Tabs inherit working directory": "标签页继承工作目录",
++    "Terminal": "终端",
++    "Terminal position": "终端位置",
++    "Text color under cursor": "光标下文字颜色",
++    "Thicken fonts": "加粗字体",
++    "Thicken strength": "字体加粗强度",
++    "Titlebar & Tabs": "标题栏与标签页",
++    "Titlebar background": "标题栏背景",
++    "Titlebar foreground": "标题栏前景",
++    "Titlebar proxy icon": "标题栏代理图标",
++    "Titlebar style": "标题栏样式",
++    "Toolbar style": "工具栏样式",
++    "Trim trailing space on copy": "复制时移除行尾空格",
++    "UI language": "界面语言",
++    "Underline position": "下划线位置",
++    "Underline thickness": "下划线粗细",
++    "Undo timeout": "撤销超时",
++    "Unfocused split fill color": "未聚焦分屏遮罩颜色",
++    "Unfocused split opacity": "未聚焦分屏不透明度",
++    "Unicode-specifc font mapping": "Unicode 专用字体映射",
++    "Update channel": "更新通道",
++    "Use dedicated cgroups": "使用独立 cgroup",
++    "Use non-native fullscreen": "使用非原生全屏",
++    "Use option key as alt key": "将 Option 键用作 Alt 键",
++    "Use wide tabs": "使用宽标签页",
++    "VT kam mode allowed": "允许 VT KAM 模式",
++    "Vertical window padding": "窗口垂直边距",
++    "WM_CLASS class field": "WM_CLASS 类字段",
++    "WM_CLASS instance name": "WM_CLASS 实例名称",
++    "Wait for input after command": "命令结束后等待输入",
++    "Window": "窗口",
++    "Window buttons (traffic lights)": "窗口按钮（红绿灯）",
++    "Window colorspace": "窗口色彩空间",
++    "Window decorations": "窗口装饰",
++    "Window padding color": "窗口边距颜色",
++    "Window subtitle": "窗口副标题",
++    "Window theme": "窗口主题",
++    "Window title font": "窗口标题字体",
++    "Word selection characters": "单词选择边界字符",
++    "macOS shortcuts": "macOS 快捷键",
++    "macOS space behavior": "macOS 空间行为"
++};
++
++export function isChinese(): boolean {
++    if (!browser) return false;
++    const locale = window.__ghosttyLocale || navigator.language;
++    return locale.toLocaleLowerCase().startsWith("zh");
++}
++
++export function localizeLabel(value: string): string {
++    return isChinese() ? zhHansLabels[value] || value : value;
++}
++
++declare global {
++    interface Window {
++        __ghosttyLocale?: string;
++    }
++}
+diff --git a/src/lib/native.ts b/src/lib/native.ts
+new file mode 100644
+index 0000000..ba067d1
+--- /dev/null
++++ b/src/lib/native.ts
+@@ -0,0 +1,57 @@
++import {browser} from "$app/environment";
++
++interface WebKitMessageHandler {
++    postMessage(message: unknown): void;
++}
++
++interface NativeLoadDetail {
++    content: string;
++    path: string;
++}
++
++interface NativeResultDetail {
++    message: string;
++    ok: boolean;
++}
++
++declare global {
++    interface Window {
++        webkit?: {
++            messageHandlers?: {
++                ghosttyConfig?: WebKitMessageHandler;
++            };
++        };
++    }
++}
++
++export function isNativeHost() {
++    return browser && Boolean(window.webkit?.messageHandlers?.ghosttyConfig);
++}
++
++function post(message: unknown) {
++    window.webkit?.messageHandlers?.ghosttyConfig?.postMessage(message);
++}
++
++export function requestNativeConfig() {
++    post({action: "ready"});
++}
++
++export function saveNativeConfig(config: string, keys: string[]) {
++    post({action: "save", config, keys});
++}
++
++export function openNativeConfigFile() {
++    post({action: "open-config-file"});
++}
++
++export function observeNativeConfig(handler: (detail: NativeLoadDetail) => void) {
++    const listener = (event: Event) => handler((event as CustomEvent<NativeLoadDetail>).detail);
++    window.addEventListener("ghostty-native-config", listener);
++    return () => window.removeEventListener("ghostty-native-config", listener);
++}
++
++export function observeNativeResult(handler: (detail: NativeResultDetail) => void) {
++    const listener = (event: Event) => handler((event as CustomEvent<NativeResultDetail>).detail);
++    window.addEventListener("ghostty-native-result", listener);
++    return () => window.removeEventListener("ghostty-native-result", listener);
++}
+diff --git a/src/lib/settings/navigation.ts b/src/lib/settings/navigation.ts
+index fcaaf39..30e0b71 100644
+--- a/src/lib/settings/navigation.ts
++++ b/src/lib/settings/navigation.ts
+@@ -490,9 +490,7 @@ export const navigation = [
+                     "macosSecureInputIndication",
+                     "macosApplescript",
+                     "macosDockDropBehavior",
+-                    "macosShortcuts",
+-                    "autoUpdate",
+-                    "autoUpdateChannel"
++                    "macosShortcuts"
+                 ]
+             },
+             {
+@@ -546,4 +544,4 @@ export function validateNavigation() {
+     }
+ }
+
+-if (dev) validateNavigation();
+\ No newline at end of file
++if (dev) validateNavigation();
+diff --git a/src/lib/stores/search.svelte.ts b/src/lib/stores/search.svelte.ts
+index 640659c..b279784 100644
+--- a/src/lib/stores/search.svelte.ts
++++ b/src/lib/stores/search.svelte.ts
+@@ -2,6 +2,7 @@ import {resolve} from "$app/paths";
+ import navigation from "$lib/settings/navigation";
+ import registry from "$lib/settings/registry";
+ import type {SettingsRegistry} from "$lib/settings/types";
++import {localizeLabel} from "$lib/i18n";
+
+
+ // FIXME: this is a bit of a mess, now that we separated this logic from the UI,
+@@ -116,7 +117,16 @@ const searchableSettings = (() => {
+                 const setting = registry[id] as SettingsRegistry[keyof SettingsRegistry];
+                 const cleanedNote = setting.note ? stripHtmlRegex(setting.note) : "";
+                 const cleanedDescription = setting.description ? stripMarkdownRegex(setting.description) : "";
+-                const searchableText = [category.name, group.name, setting.name, cleanedNote, cleanedDescription];
++                const searchableText = [
++                    category.name,
++                    localizeLabel(category.name),
++                    group.name,
++                    localizeLabel(group.name),
++                    setting.name,
++                    localizeLabel(setting.name),
++                    cleanedNote,
++                    cleanedDescription
++                ];
+
+                 results.push({
+                     categoryId: category.id,
+@@ -200,4 +210,4 @@ export function getHighlightParts(value: string,): HighlightPart[] {
+     }
+
+     return parts;
+-}
+\ No newline at end of file
++}
+diff --git a/src/routes/+layout.svelte b/src/routes/+layout.svelte
+index 2234e45..fd2e826 100644
+--- a/src/routes/+layout.svelte
++++ b/src/routes/+layout.svelte
+@@ -11,6 +11,7 @@
+     import ToastStack from "$lib/components/ToastStack.svelte";
+     import SettingsSearch from "$lib/components/SettingsSearch.svelte";
+     import MacDock from "$lib/components/MacDock.svelte";
++    import NativeToolbar from "$lib/components/NativeToolbar.svelte";
+
+     import github from "$lib/images/tabs/github.svg";
+     import ghostty from "$lib/images/tabs/ghostty.webp";
+@@ -24,6 +25,7 @@
+     import {resolveCellColor} from "$lib/utils/colors";
+     import app from "$lib/stores/state.svelte";
+     import navigation, {tabGroups} from "$lib/settings/navigation";
++    import {isChinese, localizeLabel} from "$lib/i18n";
+
+
+     // The single funnel for the color keys: everything below reads the *effective* colors
+@@ -89,7 +91,7 @@
+             </div>
+         </div>
+         <SettingsSearch>
+-            <User route="/" />
++            {#if !isChinese()}<User route="/" />{/if}
+             <!-- <Gap />
+             <Tab route="/settings/application">
+                 {#snippet icon()}<img src={application} alt="Application Settings" />{/snippet}
+@@ -144,13 +146,13 @@
+                                 <!-- FIXME: this is a hack -->
+                                 {#if panel.icon.includes("svg+xml") || panel.icon.endsWith(".svg")}
+                                     <div class="icon-wrapper">
+-                                        <img src={panel.icon} alt={`${panel.name} Settings`} />
++                                        <img src={panel.icon} alt={`${localizeLabel(panel.name)} Settings`} />
+                                     </div>
+                                 {:else}
+-                                    <img src={panel.icon} alt={`${panel.name} Settings`} />
++                                    <img src={panel.icon} alt={`${localizeLabel(panel.name)} Settings`} />
+                                 {/if}
+                             {/snippet}
+-                            {panel.name}
++                            {localizeLabel(panel.name)}
+                         </Tab>
+                     {/if}
+                 {/each}
+@@ -181,8 +183,11 @@
+             </Tab>
+         </SettingsSearch>
+     </div>
+-    <div id="content-view">
+-        {@render children()}
++    <div id="content-column">
++        <div id="content-view">
++            {@render children()}
++        </div>
++        <NativeToolbar />
+     </div>
+     <MacDock />
+     <ModalStack />
+@@ -301,10 +306,18 @@
+     background-color: var(--color-success);
+ }
+
++#content-column {
++    display: flex;
++    flex: 1;
++    flex-direction: column;
++    min-width: 0;
++}
++
+ #content-view {
+     background: var(--bg-level-1);
+     flex: 1;
+     display: flex;
++    min-height: 0;
+     min-width: 0;
+ }
+
+diff --git a/src/routes/settings/[category]/+page.svelte b/src/routes/settings/[category]/+page.svelte
+index 77cf42a..5b5f434 100644
+--- a/src/routes/settings/[category]/+page.svelte
++++ b/src/routes/settings/[category]/+page.svelte
+@@ -34,10 +34,11 @@
+     import ScrollMultiplier from "$lib/components/settings/ScrollMultiplier.svelte";
+     import NumberWithUnits from "$lib/components/settings/NumberWithUnits.svelte";
+     import {type DropdownOption, type FeatureDef, type PillOption, type SettingsRegistry, type SpecialValue} from "$lib/settings/types";
++    import {localizeLabel} from "$lib/i18n";
+
+
+     const category = $derived(navigation.find(c => c.id === $page.params.category));
+-    const title = $derived(category?.name ?? $page.params.category);
++    const title = $derived(localizeLabel(category?.name ?? $page.params.category ?? ""));
+
+     // Color editors display the *effective* color (override > theme > default) so the picker
+     // always agrees with the preview; edits write an override into config, and reset/right-click
+@@ -93,7 +94,7 @@
+             <Admonition size="1.5rem">You can reset a color to its default value by right clicking!</Admonition>
+         {/if}
+         {#each category.groups as group (group.id)}
+-            <Group title={group.name} note={"note" in group ? group.note : undefined}>
++            <Group title={localizeLabel(group.name)} note={"note" in group ? group.note : undefined}>
+                 {@const previewKey = "preview" in group ? group.preview : undefined}
+                 {#if previewKey && previews[previewKey]}
+                     {@const Preview = previews[previewKey] as Component}
+@@ -106,7 +107,7 @@
+                     {#if i !== 0}<Separator />{/if}
+                     <Item
+                         {settingId}
+-                        name={setting.name}
++                        name={localizeLabel(setting.name)}
+                         note={setting.note}
+                         // filter out the current platform from the badge list since it's already obvious from the UI
+                         platform={setting?.platform?.filter(p => p !== title?.toLowerCase())}
+@@ -172,4 +173,4 @@
+         <h1>What Happened?</h1>
+         <p>You shouldn't be here! If you followed a link, please report the bug on GitHub. Otherwise, go ahead and start browsing on the left.</p>
+     {/if}
+-</Page>
+\ No newline at end of file
++</Page>
+diff --git a/src/routes/settings/keybinds/+page.svelte b/src/routes/settings/keybinds/+page.svelte
+index 90023b7..e43643d 100644
+--- a/src/routes/settings/keybinds/+page.svelte
++++ b/src/routes/settings/keybinds/+page.svelte
+@@ -2,8 +2,9 @@
+     import Page from "$lib/views/Page.svelte";
+     import config from "$lib/stores/config.svelte";
+     import Keybinds from "$lib/components/settings/Keybinds.svelte";
++    import {isChinese} from "$lib/i18n";
+ </script>
+
+-<Page title="Keybinds">
++<Page title={isChinese() ? "快捷键" : "Keybinds"}>
+     <Keybinds bind:value={config.keybind} />
+ </Page>
