@@ -32,7 +32,10 @@ final class SettingsController: NSWindowController,
             options: [.fragmentsAllowed]))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "\"en\""
         configuration.userContentController.addUserScript(WKUserScript(
-            source: "window.__ghosttyLocale = \(localizationJSON);",
+            source: """
+            window.__ghosttyLocale = \(localizationJSON);
+            document.documentElement.classList.add("ghostty-native-host");
+            """,
             injectionTime: .atDocumentStart,
             forMainFrameOnly: true))
 

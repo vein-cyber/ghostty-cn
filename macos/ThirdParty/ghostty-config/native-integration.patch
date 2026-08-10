@@ -1,9 +1,9 @@
 diff --git a/src/lib/components/NativeToolbar.svelte b/src/lib/components/NativeToolbar.svelte
 new file mode 100644
-index 0000000..6575a15
+index 0000000..89f88c6
 --- /dev/null
 +++ b/src/lib/components/NativeToolbar.svelte
-@@ -0,0 +1,142 @@
+@@ -0,0 +1,164 @@
 +<script lang="ts">
 +    import {onMount} from "svelte";
 +
@@ -130,16 +130,38 @@ index 0000000..6575a15
 +}
 +
 +:global(html.ghostty-native-host body) {
++    align-items: stretch;
++    background: var(--bg-level-1);
++    height: 100%;
++    justify-content: stretch;
++    min-height: 0;
 +    overflow: hidden;
++    width: 100%;
 +}
 +
 +:global(html.ghostty-native-host .app-window) {
 +    border: 0;
 +    border-radius: 0;
 +    box-shadow: none;
-+    height: 100%;
++    height: auto;
++    inset: 0;
 +    max-width: none;
-+    width: 100%;
++    min-height: 0;
++    position: fixed;
++    width: auto;
++}
++
++:global(html.ghostty-native-host #sidebar),
++:global(html.ghostty-native-host #content-column),
++:global(html.ghostty-native-host #content-view),
++:global(html.ghostty-native-host .content-page),
++:global(html.ghostty-native-host .content-container) {
++    min-height: 0;
++}
++
++:global(html.ghostty-native-host #content-column),
++:global(html.ghostty-native-host #content-view) {
++    overflow: hidden;
 +}
 +
 +:global(html.ghostty-native-host .window-actions-container) {
@@ -645,7 +667,7 @@ index 640659c..b279784 100644
 \ No newline at end of file
 +}
 diff --git a/src/routes/+layout.svelte b/src/routes/+layout.svelte
-index 2234e45..fd2e826 100644
+index 2234e45..74e13f2 100644
 --- a/src/routes/+layout.svelte
 +++ b/src/routes/+layout.svelte
 @@ -11,6 +11,7 @@
@@ -656,15 +678,24 @@ index 2234e45..fd2e826 100644
 
      import github from "$lib/images/tabs/github.svg";
      import ghostty from "$lib/images/tabs/ghostty.webp";
-@@ -24,6 +25,7 @@
+@@ -24,6 +25,8 @@
      import {resolveCellColor} from "$lib/utils/colors";
      import app from "$lib/stores/state.svelte";
      import navigation, {tabGroups} from "$lib/settings/navigation";
 +    import {isChinese, localizeLabel} from "$lib/i18n";
++    import {isNativeHost} from "$lib/native";
 
 
      // The single funnel for the color keys: everything below reads the *effective* colors
-@@ -89,7 +91,7 @@
+@@ -61,6 +64,7 @@
+     });
+
+     const {children}: {children: Snippet} = $props();
++    const nativeHost = isNativeHost();
+
+
+
+@@ -89,7 +93,7 @@
              </div>
          </div>
          <SettingsSearch>
@@ -673,7 +704,7 @@ index 2234e45..fd2e826 100644
              <!-- <Gap />
              <Tab route="/settings/application">
                  {#snippet icon()}<img src={application} alt="Application Settings" />{/snippet}
-@@ -144,13 +146,13 @@
+@@ -144,13 +148,13 @@
                                  <!-- FIXME: this is a hack -->
                                  {#if panel.icon.includes("svg+xml") || panel.icon.endsWith(".svg")}
                                      <div class="icon-wrapper">
@@ -690,7 +721,7 @@ index 2234e45..fd2e826 100644
                          </Tab>
                      {/if}
                  {/each}
-@@ -181,8 +183,11 @@
+@@ -181,10 +185,13 @@
              </Tab>
          </SettingsSearch>
      </div>
@@ -702,9 +733,12 @@ index 2234e45..fd2e826 100644
 +        </div>
 +        <NativeToolbar />
      </div>
-     <MacDock />
+-    <MacDock />
++    {#if !nativeHost}<MacDock />{/if}
      <ModalStack />
-@@ -301,10 +306,18 @@
+     <ToastStack />
+ </div>
+@@ -301,10 +308,18 @@
      background-color: var(--color-success);
  }
 
