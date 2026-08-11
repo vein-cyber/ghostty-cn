@@ -41,22 +41,22 @@
         }
       }
     },
-    "Ghostty Settings": {
+    "GhosttyCN Settings": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 设置"
+            "value": "GhosttyCN 设置"
           }
         }
       }
     },
-    "Ghostty will create a backup, preserve comments and unsupported options, and move supported settings into an automatically managed section.": {
+    "GhosttyCN will create a backup, preserve comments and unsupported options, and move supported settings into an automatically managed section.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 将先创建备份，保留注释和不受支持的选项，并把受支持的设置移入自动管理的区域。"
+            "value": "GhosttyCN 将先创建备份，保留注释和不受支持的选项，并把受支持的设置移入自动管理的区域。"
           }
         }
       }
@@ -71,12 +71,12 @@
         }
       }
     },
-    "Reinstall Ghostty and try again.": {
+    "Reinstall GhosttyCN and try again.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "请重新安装 Ghostty 后再试。"
+            "value": "请重新安装 GhosttyCN 后再试。"
           }
         }
       }
@@ -382,22 +382,22 @@
         }
       }
     },
-    "Allow Ghostty to execute \"%@\"?": {
+    "Allow GhosttyCN to execute \"%@\"?": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "允许 Ghostty 执行“%@”吗？"
+            "value": "允许 GhosttyCN 执行“%@”吗？"
           }
         }
       }
     },
-    "Allow Shortcuts to interact with Ghostty?": {
+    "Allow Shortcuts to interact with GhosttyCN?": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "允许“快捷指令”与 Ghostty 交互吗？"
+            "value": "允许“快捷指令”与 GhosttyCN 交互吗？"
           }
         }
       }
@@ -1011,22 +1011,22 @@
         }
       }
     },
-    "Debug builds of Ghostty are very slow and you may experience\nperformance problems. Debug builds are only recommended during\ndevelopment.": {
+    "Debug builds of GhosttyCN are very slow and you may experience\nperformance problems. Debug builds are only recommended during\ndevelopment.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 的调试版本运行很慢，可能会出现性能问题。\n调试版本仅建议用于开发。"
+            "value": "GhosttyCN 的调试版本运行很慢，可能会出现性能问题。\n调试版本仅建议用于开发。"
           }
         }
       }
     },
-    "Debug builds of Ghostty are very slow and you may experience performance problems. Debug builds are only recommended during development.": {
+    "Debug builds of GhosttyCN are very slow and you may experience performance problems. Debug builds are only recommended during development.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 的调试版本运行很慢，可能会出现性能问题。调试版本仅建议用于开发。"
+            "value": "GhosttyCN 的调试版本运行很慢，可能会出现性能问题。调试版本仅建议用于开发。"
           }
         }
       }
@@ -1634,62 +1634,62 @@
         }
       }
     },
-    "Ghostty": {
+    "GhosttyCN": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty"
+            "value": "GhosttyCN"
           }
         }
       }
     },
-    "Ghostty Application Icon": {
+    "GhosttyCN Application Icon": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 应用图标"
+            "value": "GhosttyCN 应用图标"
           }
         }
       }
     },
-    "Ghostty Blocked This Link": {
+    "GhosttyCN Blocked This Link": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 已阻止此链接"
+            "value": "GhosttyCN 已阻止此链接"
           }
         }
       }
     },
-    "Ghostty can automatically check for updates in the background.": {
+    "GhosttyCN can automatically check for updates in the background.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 可以在后台自动检查更新。"
+            "value": "GhosttyCN 可以在后台自动检查更新。"
           }
         }
       }
     },
-    "Ghostty could not be set as the default terminal application.\n\nError: %@": {
+    "GhosttyCN could not be set as the default terminal application.\n\nError: %@": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "无法将 Ghostty 设为默认终端应用。\n\n错误：%@"
+            "value": "无法将 GhosttyCN 设为默认终端应用。\n\n错误：%@"
           }
         }
       }
     },
-    "Ghostty doesn't allow Shortcuts.": {
+    "GhosttyCN doesn't allow Shortcuts.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 不允许“快捷指令”访问。"
+            "value": "GhosttyCN 不允许“快捷指令”访问。"
           }
         }
       }
@@ -2851,12 +2851,12 @@
         }
       }
     },
-    "Quit Ghostty?": {
+    "Quit GhosttyCN?": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "退出 Ghostty 吗？"
+            "value": "退出 GhosttyCN 吗？"
           }
         }
       }
@@ -3272,12 +3272,12 @@
         }
       }
     },
-    "Secure Input is active. Secure Input is a macOS security feature that\nprevents applications from reading keyboard events. This is enabled\nautomatically whenever Ghostty detects a password prompt in the terminal,\nor at all times if `Ghostty > Secure Keyboard Entry` is active.": {
+    "Secure Input is active. Secure Input is a macOS security feature that\nprevents applications from reading keyboard events. This is enabled\nautomatically whenever GhosttyCN detects a password prompt in the terminal,\nor at all times if `GhosttyCN > Secure Keyboard Entry` is active.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "安全输入已启用。安全输入是 macOS 的一项安全功能，可防止应用读取键盘事件。\n当 Ghostty 检测到终端中的密码提示时会自动启用此功能；如果启用了\n“Ghostty > 安全键盘输入”，则会始终启用。"
+            "value": "安全输入已启用。安全输入是 macOS 的一项安全功能，可防止应用读取键盘事件。\n当 GhosttyCN 检测到终端中的密码提示时会自动启用此功能；如果启用了\n“GhosttyCN > 安全键盘输入”，则会始终启用。"
           }
         }
       }
@@ -3423,12 +3423,12 @@
         }
       }
     },
-    "Something went fatally wrong.\nCheck the logs and restart Ghostty.": {
+    "Something went fatally wrong.\nCheck the logs and restart GhosttyCN.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "发生了严重错误。\n请检查日志并重新启动 Ghostty。"
+            "value": "发生了严重错误。\n请检查日志并重新启动 GhosttyCN。"
           }
         }
       }
@@ -3725,12 +3725,12 @@
         }
       }
     },
-    "The Ghostty app isn't properly initialized.": {
+    "The GhosttyCN app isn't properly initialized.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 应用尚未正确初始化。"
+            "value": "GhosttyCN 应用尚未正确初始化。"
           }
         }
       }
@@ -4215,12 +4215,12 @@
         }
       }
     },
-    "Update Ghostty and Restart": {
+    "Update GhosttyCN and Restart": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "更新 Ghostty 并重新启动"
+            "value": "更新 GhosttyCN 并重新启动"
           }
         }
       }
@@ -4487,12 +4487,12 @@
         }
       }
     },
-    "You're running a debug build of Ghostty! Performance will be degraded.": {
+    "You're running a debug build of GhosttyCN! Performance will be degraded.": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "你正在运行 Ghostty 的调试版本！性能会有所下降。"
+            "value": "你正在运行 GhosttyCN 的调试版本！性能会有所下降。"
           }
         }
       }

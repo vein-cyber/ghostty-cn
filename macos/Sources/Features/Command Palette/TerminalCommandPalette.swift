@@ -93,7 +93,7 @@ struct TerminalCommandPaletteView: View {
             // convey it'll go all the way through.
             let title: String
             if case .updateAvailable = updateViewModel.state {
-                title = String(localized: "Update Ghostty and Restart")
+                title = String(localized: "Update GhosttyCN and Restart")
             } else {
                 title = updateViewModel.text
             }

@@ -383,17 +383,6 @@ class AppDelegate: NSObject,
             return .terminateNow
         }
 
-        // This probably isn't fully safe. The isEmpty check above is aspirational, it doesn't
-        // quite work with SwiftUI because windows are retained on close. So instead we check
-        // if there are any that are visible. I'm guessing this breaks under certain scenarios.
-        //
-        // NOTE(mitchellh): I don't think we need this check at all anymore. I'm keeping it
-        // here because I don't want to remove it in a patch release cycle but we should
-        // target removing it soon.
-        if (windows.allSatisfy { !$0.isVisible }) {
-            return .terminateNow
-        }
-
         // If the user is shutting down, restarting, or logging out, we don't confirm quit.
         why: if let event = NSAppleEventManager.shared().currentAppleEvent {
             // If all Ghostty windows are in the background (i.e. you Cmd-Q from the Cmd-Tab
@@ -497,7 +486,7 @@ class AppDelegate: NSObject,
             // may want to show this as a sheet on the focused window (especially if we're
             // opening a tab). I'm not sure.
             let alert = NSAlert()
-            alert.messageText = String(localized: "Allow Ghostty to execute \"\(filename)\"?")
+            alert.messageText = String(localized: "Allow GhosttyCN to execute \"\(filename)\"?")
             alert.addButton(withTitle: String(localized: "Allow"))
             alert.addButton(withTitle: String(localized: "Cancel"))
             alert.alertStyle = .warning
@@ -1264,7 +1253,7 @@ extension AppDelegate {
             Task { @MainActor in
                 let alert = NSAlert()
                 alert.messageText = String(localized: "Failed to Set Default Terminal")
-                alert.informativeText = String(localized: "Ghostty could not be set as the default terminal application.\n\nError: \(error.localizedDescription)")
+                alert.informativeText = String(localized: "GhosttyCN could not be set as the default terminal application.\n\nError: \(error.localizedDescription)")
                 alert.alertStyle = .warning
                 alert.runModal()
             }
@@ -1326,7 +1315,7 @@ extension AppDelegate {
         if controllersNeedConfirmation.count == 1 {
             Task {
                 let response = await controllersNeedConfirmation[0].confirmCloseAsync(
-                    messageText: String(localized: "Quit Ghostty?"),
+                    messageText: String(localized: "Quit GhosttyCN?"),
                     informativeText: String(localized: "The terminal still has a running process. If you quit, the process will be killed."),
                     confirmButtonTitle: String(localized: "Terminate"),
                 )
@@ -1364,7 +1353,7 @@ extension AppDelegate {
         Task {
             for controller in controllers {
                 let response = await controller.confirmCloseAsync(
-                    messageText: String(localized: "Quit Ghostty?"),
+                    messageText: String(localized: "Quit GhosttyCN?"),
                     informativeText: String(localized: "The terminal still has a running process. If you quit, the process will be killed."),
                     confirmButtonTitle: String(localized: "Terminate"),
                 )

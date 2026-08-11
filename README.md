@@ -2,14 +2,14 @@
 <h1>
 <p align="center">
   <img src="https://github.com/user-attachments/assets/fe853809-ba8b-400b-83ab-a9a0da25be8a" alt="Logo" width="128">
-  <br>Ghostty 简体中文版
+  <br>GhosttyCN 简体中文版
 </h1>
   <p align="center">
     基于 Ghostty 上游项目，为 macOS 原生界面提供简体中文支持。
     <br />
     保留原生性能、界面体验和 <code>libghostty</code> 能力。
     <br />
-    <a href="#ghostty-简体中文版">中文版说明</a>
+    <a href="#ghosttycn-简体中文版">中文版说明</a>
     ·
     <a href="https://github.com/vein-cyber/ghostty-cn/releases">下载</a>
     ·
@@ -21,7 +21,7 @@
   </p>
 </p>
 
-## Ghostty 简体中文版
+## GhosttyCN 简体中文版
 
 本仓库基于 [Ghostty](https://github.com/ghostty-org/ghostty)，第一阶段为
 macOS 原生应用提供完整的简体中文界面。英文继续作为源语言和回退语言，
@@ -40,20 +40,27 @@ macOS 原生应用提供完整的简体中文界面。英文继续作为源语�
 
 ### 选择简体中文
 
-当 macOS 的首选语言为简体中文时，Ghostty 会自动使用中文。也可以前往
-“系统设置 → 通用 → 语言与地区 → 应用程序”，为 Ghostty 单独选择
-“简体中文”。切换后需要完全退出 Ghostty，再重新启动。
+当 macOS 的首选语言为简体中文时，GhosttyCN 会自动使用中文。也可以前往
+“系统设置 → 通用 → 语言与地区 → 应用程序”，为 GhosttyCN 单独选择
+“简体中文”。切换后需要完全退出 GhosttyCN，再重新启动。
 
 ### 可视化设置
 
-按 `⌘,` 或选择“Ghostty → 设置…”即可打开内置设置编辑器。编辑器基于
+按 `⌘,` 或选择“GhosttyCN → 设置…”即可打开内置设置编辑器。编辑器基于
 [ghostty-config](https://github.com/zerebos/ghostty-config)，资源随应用离线提供，
 无需连接外部网站。
 
-首次保存已有配置时，Ghostty 会在同一目录创建扩展名为
+首次保存已有配置时，GhosttyCN 会在同一目录创建扩展名为
 `.before-ghostty-cn` 的备份。保存过程会保留注释、编辑器暂不支持的选项以及
 `config-file` 配置包含关系；可视化编辑器管理的项目会写入单独的标记区域，
 然后立即重新载入配置。需要完整手工控制时，可以点击“编辑原始配置”。
+
+### 与原版同时安装
+
+macOS 产物名为 `GhosttyCN.app`，使用独立的应用标识，因此可以与官方
+`Ghostty.app` 同时放在“应用程序”目录并分别运行。两者继续读取同一份
+`~/Library/Application Support/com.mitchellh.ghostty/config.ghostty`；应用偏好、
+窗口状态、系统权限以及“每个 App 的语言”设置则彼此独立。
 
 ### 本地构建
 
@@ -61,10 +68,10 @@ macOS 原生应用提供完整的简体中文界面。英文继续作为源语�
 
 ```shell
 zig build -Doptimize=ReleaseFast
-open macos/build/ReleaseLocal/Ghostty.app
+open macos/build/ReleaseLocal/GhosttyCN.app
 ```
 
-产物位于 `macos/build/ReleaseLocal/Ghostty.app`。`ReleaseLocal` 使用本机临时
+产物位于 `macos/build/ReleaseLocal/GhosttyCN.app`。`ReleaseLocal` 使用本机临时
 签名，适合本地测试；公开分发前仍需使用 Apple Developer 证书签名并完成
 公证。
 

@@ -44,8 +44,8 @@ func requestIntentPermission() async -> Bool {
             }
 
             PermissionRequest.show(
-                "com.mitchellh.ghostty.shortcutsPermission",
-                message: String(localized: "Allow Shortcuts to interact with Ghostty?"),
+                "com.vein-cyber.ghostty-cn.shortcutsPermission",
+                message: String(localized: "Allow Shortcuts to interact with GhosttyCN?"),
                 allowDuration: .forever,
                 rememberDuration: nil,
             ) { response in

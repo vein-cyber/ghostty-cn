@@ -8,13 +8,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "Ghostty"
+            "value": "GhosttyCN"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty"
+            "value": "GhosttyCN"
           }
         }
       }
@@ -26,23 +26,23 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "Ghostty"
+            "value": "GhosttyCN"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty"
+            "value": "GhosttyCN"
           }
         }
       }
     },
-    "Ghostty Surface Identifier": {
+    "GhosttyCN Surface Identifier": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 表面标识符"
+            "value": "GhosttyCN 表面标识符"
           }
         }
       }
@@ -54,13 +54,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "A program running within Ghostty would like to use AppleScript."
+            "value": "A program running within GhosttyCN would like to use AppleScript."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 中运行的程序想要使用 AppleScript。"
+            "value": "GhosttyCN 中运行的程序想要使用 AppleScript。"
           }
         }
       }
@@ -72,13 +72,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "A program running within Ghostty would like to use Bluetooth."
+            "value": "A program running within GhosttyCN would like to use Bluetooth."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 中运行的程序想要使用蓝牙。"
+            "value": "GhosttyCN 中运行的程序想要使用蓝牙。"
           }
         }
       }
@@ -90,13 +90,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "A program running within Ghostty would like to access your Calendar."
+            "value": "A program running within GhosttyCN would like to access your Calendar."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 中运行的程序想要访问你的日历。"
+            "value": "GhosttyCN 中运行的程序想要访问你的日历。"
           }
         }
       }
@@ -108,13 +108,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "A program running within Ghostty would like to use the camera."
+            "value": "A program running within GhosttyCN would like to use the camera."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 中运行的程序想要使用摄像头。"
+            "value": "GhosttyCN 中运行的程序想要使用摄像头。"
           }
         }
       }
@@ -126,13 +126,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "A program running within Ghostty would like to access your Contacts."
+            "value": "A program running within GhosttyCN would like to access your Contacts."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 中运行的程序想要访问你的通讯录。"
+            "value": "GhosttyCN 中运行的程序想要访问你的通讯录。"
           }
         }
       }
@@ -157,13 +157,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "A program running within Ghostty would like to access the local network."
+            "value": "A program running within GhosttyCN would like to access the local network."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 中运行的程序想要访问本地网络。"
+            "value": "GhosttyCN 中运行的程序想要访问本地网络。"
           }
         }
       }
@@ -175,13 +175,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "A program running within Ghostty would like to use your location temporarily."
+            "value": "A program running within GhosttyCN would like to use your location temporarily."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 中运行的程序想要暂时使用你的位置信息。"
+            "value": "GhosttyCN 中运行的程序想要暂时使用你的位置信息。"
           }
         }
       }
@@ -193,13 +193,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "A program running within Ghostty would like to access your location information."
+            "value": "A program running within GhosttyCN would like to access your location information."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 中运行的程序想要访问你的位置信息。"
+            "value": "GhosttyCN 中运行的程序想要访问你的位置信息。"
           }
         }
       }
@@ -211,13 +211,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "A program running within Ghostty would like to use your microphone."
+            "value": "A program running within GhosttyCN would like to use your microphone."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 中运行的程序想要使用麦克风。"
+            "value": "GhosttyCN 中运行的程序想要使用麦克风。"
           }
         }
       }
@@ -229,13 +229,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "A program running within Ghostty would like to access motion data."
+            "value": "A program running within GhosttyCN would like to access motion data."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 中运行的程序想要访问运动数据。"
+            "value": "GhosttyCN 中运行的程序想要访问运动数据。"
           }
         }
       }
@@ -247,13 +247,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "A program running within Ghostty would like to access your Photo Library."
+            "value": "A program running within GhosttyCN would like to access your Photo Library."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 中运行的程序想要访问你的照片图库。"
+            "value": "GhosttyCN 中运行的程序想要访问你的照片图库。"
           }
         }
       }
@@ -265,13 +265,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "A program running within Ghostty would like to access your reminders."
+            "value": "A program running within GhosttyCN would like to access your reminders."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 中运行的程序想要访问你的提醒事项。"
+            "value": "GhosttyCN 中运行的程序想要访问你的提醒事项。"
           }
         }
       }
@@ -283,13 +283,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "A program running within Ghostty would like to use speech recognition."
+            "value": "A program running within GhosttyCN would like to use speech recognition."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 中运行的程序想要使用语音识别。"
+            "value": "GhosttyCN 中运行的程序想要使用语音识别。"
           }
         }
       }
@@ -301,13 +301,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "A program running within Ghostty requires elevated privileges."
+            "value": "A program running within GhosttyCN requires elevated privileges."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 中运行的程序需要提升权限。"
+            "value": "GhosttyCN 中运行的程序需要提升权限。"
           }
         }
       }
@@ -318,13 +318,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "A program running within Ghostty would like to access your system's audio."
+            "value": "A program running within GhosttyCN would like to access your system's audio."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 中运行的程序想要访问系统音频。"
+            "value": "GhosttyCN 中运行的程序想要访问系统音频。"
           }
         }
       }

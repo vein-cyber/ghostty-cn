@@ -34,7 +34,7 @@ enum UntrustedURLAlert {
             let alert = NSAlert()
             alert.alertStyle = .warning
             alert.icon = NSImage(named: NSImage.cautionName)
-            alert.messageText = String(localized: "Ghostty Blocked This Link")
+            alert.messageText = String(localized: "GhosttyCN Blocked This Link")
             alert.informativeText = reason.message
             alert.accessoryView = targetView(displayString)
             alert.addButton(withTitle: String(localized: "OK"))

@@ -175,7 +175,7 @@ Build the core framework and macOS app before previewing a language override:
 ```console
 $ zig build -Demit-macos-app=false
 $ macos/build.nu
-$ open macos/build/Debug/Ghostty.app --args -AppleLanguages '(zh-Hans)' -AppleLocale zh_CN
+$ open macos/build/Debug/GhosttyCN.app --args -AppleLanguages '(zh-Hans)' -AppleLocale zh_CN
 ```
 
 Quit all running Ghostty processes before changing the language. Relaunching is

@@ -57,9 +57,9 @@ final class SettingsController: NSWindowController,
 
         window.contentView = webView
         window.minSize = NSSize(width: 820, height: 580)
-        window.title = String(localized: "Ghostty Settings")
+        window.title = String(localized: "GhosttyCN Settings")
         window.center()
-        window.setFrameAutosaveName("GhosttySettings")
+        window.setFrameAutosaveName("GhosttyCNSettings")
     }
 
     required init?(coder: NSCoder) {
@@ -194,7 +194,7 @@ final class SettingsController: NSWindowController,
         let alert = NSAlert()
         alert.alertStyle = .informational
         alert.messageText = String(localized: "Let Visual Settings Manage Your Configuration?")
-        alert.informativeText = String(localized: "Ghostty will create a backup, preserve comments and unsupported options, and move supported settings into an automatically managed section.")
+        alert.informativeText = String(localized: "GhosttyCN will create a backup, preserve comments and unsupported options, and move supported settings into an automatically managed section.")
         alert.addButton(withTitle: String(localized: "Continue"))
         alert.addButton(withTitle: String(localized: "Cancel"))
 
@@ -208,7 +208,7 @@ final class SettingsController: NSWindowController,
         let alert = NSAlert()
         alert.alertStyle = .critical
         alert.messageText = String(localized: "Settings resources are missing.")
-        alert.informativeText = String(localized: "Reinstall Ghostty and try again.")
+        alert.informativeText = String(localized: "Reinstall GhosttyCN and try again.")
         alert.runModal()
     }
 
@@ -310,8 +310,8 @@ private final class GhosttyConfigSchemeHandler: NSObject, WKURLSchemeHandler {
 }
 
 enum GhosttyConfigFileEditor {
-    static let startMarker = "# --- Ghostty CN visual settings ---"
-    static let endMarker = "# --- End Ghostty CN visual settings ---"
+    static let startMarker = "# --- GhosttyCN visual settings ---"
+    static let endMarker = "# --- End GhosttyCN visual settings ---"
     static let protectedKeys: Set<String> = [
         "auto-update",
         "auto-update-channel",
@@ -385,7 +385,7 @@ enum GhosttyConfigFileEditor {
         while output.last?.isEmpty == true { output.removeLast() }
         if !output.isEmpty { output.append("") }
         output.append(startMarker)
-        output.append("# Managed by Ghostty Settings. A backup is created before the first save.")
+        output.append("# Managed by GhosttyCN Settings. A backup is created before the first save.")
         if !generated.isEmpty {
             output.append(contentsOf: generated.split(separator: "\n").map(String.init))
         }

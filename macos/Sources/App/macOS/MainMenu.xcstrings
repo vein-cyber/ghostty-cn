@@ -182,13 +182,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "About Ghostty"
+            "value": "About GhosttyCN"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "关于 Ghostty"
+            "value": "关于 GhosttyCN"
           }
         }
       }
@@ -582,13 +582,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "Make Ghostty the Default Terminal"
+            "value": "Make GhosttyCN the Default Terminal"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "将 Ghostty 设为默认终端"
+            "value": "将 GhosttyCN 设为默认终端"
           }
         }
       }
@@ -662,13 +662,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "Ghostty"
+            "value": "GhosttyCN"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty"
+            "value": "GhosttyCN"
           }
         }
       }
@@ -742,13 +742,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "Quit Ghostty"
+            "value": "Quit GhosttyCN"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "退出 Ghostty"
+            "value": "退出 GhosttyCN"
           }
         }
       }
@@ -774,13 +774,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "Hide Ghostty"
+            "value": "Hide GhosttyCN"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "隐藏 Ghostty"
+            "value": "隐藏 GhosttyCN"
           }
         }
       }
@@ -886,13 +886,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "Ghostty"
+            "value": "GhosttyCN"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty"
+            "value": "GhosttyCN"
           }
         }
       }
@@ -1062,13 +1062,13 @@
         "en": {
           "stringUnit": {
             "state": "new",
-            "value": "Ghostty Help"
+            "value": "GhosttyCN Help"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ghostty 帮助"
+            "value": "GhosttyCN 帮助"
           }
         }
       }
