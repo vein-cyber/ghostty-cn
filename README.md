@@ -35,7 +35,8 @@ macOS 原生应用提供完整的简体中文界面。英文继续作为源语�
 - 跟随 macOS 系统语言以及“每个 App 的语言”设置，完全退出并重新启动后
   生效。
 - 保持英文回退；品牌名、快捷键、路径、用户标题和终端内容保持原样。
-- 暂时关闭 Sparkle 更新功能，防止中文构建被 Ghostty 官方版本替换。
+- 通过本仓库的 GitHub Release 检查并安装经过 Sparkle 签名的更新，不会切换到
+  Ghostty 官方版本。
 - 集成离线可视化设置编辑器，可直接载入、保存并重新应用当前配置。
 
 ### 选择简体中文
@@ -62,6 +63,21 @@ macOS 产物名为 `GhosttyCN.app`，使用独立的应用标识，因此可以�
 `~/Library/Application Support/com.mitchellh.ghostty/config.ghostty`；应用偏好、
 窗口状态、系统权限以及“每个 App 的语言”设置则彼此独立。
 
+### 自动更新
+
+GhosttyCN 使用独立的更新源
+[`appcast.xml`](https://vein-cyber.github.io/ghostty-cn/appcast.xml)，更新包由本仓库的
+[GitHub Releases](https://github.com/vein-cyber/ghostty-cn/releases) 提供，并使用
+GhosttyCN 专属 Sparkle EdDSA 密钥验证。`stable` 和 `tip` 配置在 GhosttyCN 中共用
+同一个更新通道。
+
+`v0.3.0-cn.1` 是首个支持自动更新的新应用身份版本。旧的 `v0.2.x` 构建仍使用
+原版 Ghostty 的应用身份，因此需要手动下载安装 `v0.3.0-cn.1` 一次；之后可以从
+“GhosttyCN → 检查更新…”完成更新。
+
+公开构建使用临时签名且未经过 Apple 公证。首次打开时 macOS 可能要求前往
+“系统设置 → 隐私与安全性”确认打开；Sparkle 更新包本身仍会进行签名验证。
+
 ### 本地构建
 
 构建经过优化、同时支持 Apple Silicon 与 Intel 的本地 Release 版本：
@@ -72,8 +88,7 @@ open macos/build/ReleaseLocal/GhosttyCN.app
 ```
 
 产物位于 `macos/build/ReleaseLocal/GhosttyCN.app`。`ReleaseLocal` 使用本机临时
-签名，适合本地测试；公开分发前仍需使用 Apple Developer 证书签名并完成
-公证。
+签名；本仓库公开的版本同样不使用 Apple Developer 证书或 Apple 公证。
 
 > [!IMPORTANT]
 >

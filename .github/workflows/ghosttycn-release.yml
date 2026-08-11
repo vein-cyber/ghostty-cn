@@ -1,0 +1,252 @@
+name: GhosttyCN Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+-cn.[0-9]+"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (vX.Y.Z-cn.N)"
+        required: true
+        default: "v0.3.0-cn.1"
+      publish:
+        description: "Create the GitHub Release and deploy the appcast"
+        required: true
+        type: boolean
+        default: false
+
+concurrency:
+  group: ghosttycn-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  release:
+    if: github.repository == 'vein-cyber/ghostty-cn'
+    runs-on: macos-26
+    timeout-minutes: 90
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      SPARKLE_VERSION: 2.9.0
+      SPARKLE_PUBLIC_KEY: LJbK9TVh5MmcbDO0iNT9P6b6dfaka+x5lr0nDCC1OZQ=
+      GHOSTTYCN_SPARKLE_PRIVATE_KEY: ${{ secrets.GHOSTTYCN_SPARKLE_PRIVATE_KEY }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Resolve and validate version
+        id: version
+        env:
+          DISPATCH_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            tag="${GITHUB_REF_NAME}"
+            publish=true
+          else
+            tag="${DISPATCH_TAG}"
+            publish="${{ inputs.publish }}"
+          fi
+
+          if [[ ! "${tag}" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)-cn\.([0-9]+)$ ]]; then
+            echo "Tag must match vX.Y.Z-cn.N" >&2
+            exit 1
+          fi
+
+          major="${BASH_REMATCH[1]}"
+          minor="${BASH_REMATCH[2]}"
+          patch="${BASH_REMATCH[3]}"
+          revision="${BASH_REMATCH[4]}"
+          if (( minor > 99 || patch > 99 || revision < 1 || revision > 9999 )); then
+            echo "Minor and patch must be <= 99; cn revision must be 1...9999" >&2
+            exit 1
+          fi
+
+          version="${tag#v}"
+          build=$((10#${major} * 100000000 + 10#${minor} * 1000000 + 10#${patch} * 10000 + 10#${revision}))
+          upstream_version=$(sed -nE 's/^[[:space:]]*\.version = "([0-9]+\.[0-9]+\.[0-9]+)(-dev)?",/\1/p' build.zig.zon)
+          if [[ -z "${upstream_version}" ]]; then
+            echo "Unable to read the upstream Ghostty version" >&2
+            exit 1
+          fi
+
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "build=${build}" >> "${GITHUB_OUTPUT}"
+          echo "upstream_version=${upstream_version}" >> "${GITHUB_OUTPUT}"
+          echo "publish=${publish}" >> "${GITHUB_OUTPUT}"
+          echo "archive=GhosttyCN-${tag}-macos-universal.zip" >> "${GITHUB_OUTPUT}"
+
+      - name: Verify release secret
+        run: |
+          if [[ -z "${GHOSTTYCN_SPARKLE_PRIVATE_KEY}" ]]; then
+            echo "GHOSTTYCN_SPARKLE_PRIVATE_KEY is not configured" >&2
+            exit 1
+          fi
+
+      - name: Install Zig
+        uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        with:
+          version: 0.16.0
+
+      - name: Verify Xcode
+        run: |
+          xcodebuild -version
+          xcode_version=$(xcodebuild -version | awk '/Xcode/ { print $2 }')
+          IFS=. read -r xcode_major xcode_minor _ <<< "${xcode_version}"
+          if (( xcode_major < 26 || (xcode_major == 26 && xcode_minor < 5) )); then
+            echo "GhosttyCN requires Xcode 26.5 or newer" >&2
+            exit 1
+          fi
+
+      - name: Download Sparkle publishing tools
+        run: |
+          mkdir -p .action/sparkle
+          curl --fail --location --retry 3 \
+            "https://github.com/sparkle-project/Sparkle/releases/download/${SPARKLE_VERSION}/Sparkle-for-Swift-Package-Manager.zip" \
+            --output .action/sparkle/sparkle.zip
+          ditto -x -k .action/sparkle/sparkle.zip .action/sparkle
+          echo "${GITHUB_WORKSPACE}/.action/sparkle/bin" >> "${GITHUB_PATH}"
+
+      - name: Build release GhosttyKit
+        run: |
+          zig build \
+            -Doptimize=ReleaseFast \
+            -Demit-macos-app=false \
+            -Dversion-string="${{ steps.version.outputs.upstream_version }}"
+
+      - name: Build GhosttyCN.app
+        run: |
+          xcodebuild \
+            -project macos/Ghostty.xcodeproj \
+            -scheme Ghostty \
+            -configuration ReleaseLocal \
+            "SYMROOT=${GITHUB_WORKSPACE}/macos/build" \
+            ENABLE_CODE_COVERAGE=NO \
+            MARKETING_VERSION="${{ steps.version.outputs.version }}" \
+            CURRENT_PROJECT_VERSION="${{ steps.version.outputs.build }}" \
+            GHOSTTYCN_VERSION="${{ steps.version.outputs.version }}" \
+            GHOSTTY_COMMIT="${GITHUB_SHA}" \
+            build
+
+      - name: Verify application bundle
+        env:
+          APP: macos/build/ReleaseLocal/GhosttyCN.app
+        run: |
+          set -euo pipefail
+          test -d "${APP}"
+          plist="${APP}/Contents/Info.plist"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "${plist}")" = "com.vein-cyber.ghostty-cn"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :GhosttyCNVersion' "${plist}")" = "${{ steps.version.outputs.version }}"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "${plist}")" = "${{ steps.version.outputs.build }}"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :GhosttyCommit' "${plist}")" = "${GITHUB_SHA}"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :SUFeedURL' "${plist}")" = "https://vein-cyber.github.io/ghostty-cn/appcast.xml"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' "${plist}")" = "${SPARKLE_PUBLIC_KEY}"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :SURequireSignedFeed' "${plist}")" = "true"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :SUVerifyUpdateBeforeExtraction' "${plist}")" = "true"
+          ! /usr/libexec/PlistBuddy -c 'Print :SUEnableAutomaticChecks' "${plist}" >/dev/null 2>&1
+          test -d "${APP}/Contents/Resources/zh-Hans.lproj"
+          codesign --verify --deep --strict --verbose=2 "${APP}"
+          file "${APP}/Contents/MacOS/ghostty" | grep -q arm64
+          file "${APP}/Contents/MacOS/ghostty" | grep -q x86_64
+          "${APP}/Contents/MacOS/ghostty" +version | grep -q ReleaseFast
+          ! nm "${APP}/Contents/MacOS/ghostty" | grep -q '__llvm_profile'
+
+      - name: Package application
+        id: package
+        env:
+          ARCHIVE: ${{ steps.version.outputs.archive }}
+        run: |
+          set -euo pipefail
+          mkdir -p release pages
+          ditto -c -k --sequesterRsrc --keepParent \
+            macos/build/ReleaseLocal/GhosttyCN.app "release/${ARCHIVE}"
+          shasum -a 256 "release/${ARCHIVE}" > "release/${ARCHIVE}.sha256"
+
+          notes="release/${ARCHIVE%.zip}.md"
+          {
+            echo "# GhosttyCN ${{ steps.version.outputs.version }}"
+            echo
+            echo "基于 Ghostty ${{ steps.version.outputs.upstream_version }}。"
+            echo
+            echo "> v0.3.0-cn.1 是新应用身份下首个支持自动更新的版本；v0.2.x 用户需要手动安装本版本一次。"
+            echo
+            if [[ "${{ steps.version.outputs.publish }}" == "true" ]]; then
+              gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
+                -f tag_name="${{ steps.version.outputs.tag }}" \
+                --jq .body
+            else
+              git log -20 --pretty='format:- %s (`%h`)'
+            fi
+          } > "${notes}"
+
+          printf '%s\n' "${GHOSTTYCN_SPARKLE_PRIVATE_KEY}" | generate_appcast \
+            --ed-key-file - \
+            --download-url-prefix "https://github.com/${GITHUB_REPOSITORY}/releases/download/${{ steps.version.outputs.tag }}/" \
+            --full-release-notes-url "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${{ steps.version.outputs.tag }}" \
+            --link "https://github.com/${GITHUB_REPOSITORY}" \
+            --embed-release-notes \
+            --maximum-versions 1 \
+            -o release/appcast.xml \
+            release
+
+          xmllint --noout release/appcast.xml
+          grep -q 'sparkle:edSignature=' release/appcast.xml
+          grep -q "${{ steps.version.outputs.build }}" release/appcast.xml
+          grep -q "${ARCHIVE}" release/appcast.xml
+          cp release/appcast.xml pages/appcast.xml
+          printf '<!doctype html><meta http-equiv="refresh" content="0;url=appcast.xml">\n' > pages/index.html
+
+      - name: Create draft GitHub Release
+        if: steps.version.outputs.publish == 'true'
+        env:
+          ARCHIVE: ${{ steps.version.outputs.archive }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            "release/${ARCHIVE}" \
+            "release/${ARCHIVE}.sha256" \
+            "release/appcast.xml" \
+            --draft \
+            --prerelease \
+            --title "GhosttyCN ${{ steps.version.outputs.tag }}" \
+            --notes-file "release/${ARCHIVE%.zip}.md"
+
+      - name: Publish GitHub Release
+        if: steps.version.outputs.publish == 'true'
+        run: gh release edit "${{ steps.version.outputs.tag }}" --draft=false --prerelease
+
+      - name: Configure GitHub Pages
+        if: steps.version.outputs.publish == 'true'
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        if: steps.version.outputs.publish == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: pages
+
+      - name: Deploy Appcast to GitHub Pages
+        if: steps.version.outputs.publish == 'true'
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Upload dry-run artifacts
+        if: steps.version.outputs.publish != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: GhosttyCN-${{ steps.version.outputs.version }}-dry-run
+          path: |
+            release/${{ steps.version.outputs.archive }}
+            release/${{ steps.version.outputs.archive }}.sha256
+            release/appcast.xml
+          retention-days: 7

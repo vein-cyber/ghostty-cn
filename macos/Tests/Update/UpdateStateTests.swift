@@ -4,8 +4,8 @@ import Sparkle
 @testable import Ghostty
 
 struct UpdateStateTests {
-    @Test func forkUpdaterIsDisabled() {
-        #expect(!UpdateController.isEnabled)
+    @Test func forkUpdaterIsEnabled() {
+        #expect(UpdateController.isEnabled)
     }
 
     // MARK: - Equatable Tests

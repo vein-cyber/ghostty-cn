@@ -483,6 +483,17 @@
         }
       }
     },
+    "Based on Ghostty": {
+      "comment": "About window label for the upstream Ghostty version",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "基于 Ghostty"
+          }
+        }
+      }
+    },
     "Began": {
       "localizations": {
         "zh-Hans": {
@@ -520,6 +531,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "按钮"
+          }
+        }
+      }
+    },
+    "Build": {
+      "comment": "About window build number label",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "构建版本"
           }
         }
       }
@@ -841,6 +863,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "命令"
+          }
+        }
+      }
+    },
+    "Commit": {
+      "comment": "About window source commit label",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提交"
           }
         }
       }
@@ -4231,6 +4264,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "V"
+          }
+        }
+      }
+    },
+    "Version": {
+      "comment": "About window product version label",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本"
           }
         }
       }

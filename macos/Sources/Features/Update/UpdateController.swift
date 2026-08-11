@@ -9,9 +9,8 @@ import SwiftUI
 /// for managing updates with Ghostty's custom driver and delegate. It handles
 /// initialization, starting the updater, and provides the check for updates action.
 class UpdateController {
-    /// ghostty-cn does not publish a separately signed update feed yet.
-    /// Keep Sparkle disabled so an upstream build cannot replace this fork.
-    static let isEnabled = false
+    /// GhosttyCN publishes independently signed updates from its own GitHub Releases.
+    static let isEnabled = true
 
     private(set) var updater: SPUUpdater
     private let userDriver: UpdateDriver

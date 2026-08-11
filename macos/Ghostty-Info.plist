@@ -49,7 +49,9 @@
 	<key>GhosttyBuild</key>
 	<string></string>
 	<key>GhosttyCommit</key>
-	<string></string>
+	<string>$(GHOSTTY_COMMIT)</string>
+	<key>GhosttyCNVersion</key>
+	<string>$(GHOSTTYCN_VERSION)</string>
 	<key>LSEnvironment</key>
 	<dict>
 		<key>GHOSTTY_MAC_LAUNCH_SOURCE</key>
@@ -104,10 +106,15 @@
 			</array>
 		</dict>
 	</array>
-	<key>SUEnableAutomaticChecks</key>
-	<false/>
+	<key>SUFeedURL</key>
+	<!-- Escape slashes because this plist is passed through the C preprocessor. -->
+	<string>https:&#47;&#47;vein-cyber.github.io&#47;ghostty-cn&#47;appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>wsNcGf5hirwtdXMVnYoxRIX/SqZQLMOsYlD3q3imeok=</string>
+	<string>LJbK9TVh5MmcbDO0iNT9P6b6dfaka+x5lr0nDCC1OZQ=</string>
+	<key>SURequireSignedFeed</key>
+	<true/>
+	<key>SUVerifyUpdateBeforeExtraction</key>
+	<true/>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
