@@ -68,7 +68,7 @@ class UpdateController {
     /// Check for updates.
     ///
     /// This is typically connected to a menu item action.
-    @objc func checkForUpdates() {
+    func checkForUpdates() {
         guard Self.isEnabled else { return }
 
         // If we're already idle, then just check for updates immediately.
@@ -110,17 +110,6 @@ class UpdateController {
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(100)) { [weak self] in
             self?.updater.checkForUpdates()
         }
-    }
-
-    /// Validate the check for updates menu item.
-    ///
-    /// - Parameter item: The menu item to validate
-    /// - Returns: Whether the menu item should be enabled
-    func validateMenuItem(_ item: NSMenuItem) -> Bool {
-        if item.action == #selector(checkForUpdates) {
-            return Self.isEnabled && updater.canCheckForUpdates
-        }
-        return true
     }
 }
 

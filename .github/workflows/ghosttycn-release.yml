@@ -9,7 +9,7 @@ on:
       tag:
         description: "Release tag (vX.Y.Z-cn.N)"
         required: true
-        default: "v0.3.0-cn.1"
+        default: "v0.4.0-cn.1"
       publish:
         description: "Create the GitHub Release and deploy the appcast"
         required: true
@@ -37,6 +37,8 @@ jobs:
       SPARKLE_VERSION: 2.9.0
       SPARKLE_PUBLIC_KEY: LJbK9TVh5MmcbDO0iNT9P6b6dfaka+x5lr0nDCC1OZQ=
       GHOSTTYCN_SPARKLE_PRIVATE_KEY: ${{ secrets.GHOSTTYCN_SPARKLE_PRIVATE_KEY }}
+      GHOSTTY_UPSTREAM_COMMIT: 4c6215bb8ee186b5c829457a9a9a9c936f2337bf
+      GHOSTTY_CONFIG_COMMIT: d9cd47256b024380baffba06b72f384534d882a6
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout source
@@ -74,7 +76,7 @@ jobs:
 
           version="${tag#v}"
           build=$((10#${major} * 100000000 + 10#${minor} * 1000000 + 10#${patch} * 10000 + 10#${revision}))
-          upstream_version=$(sed -nE 's/^[[:space:]]*\.version = "([0-9]+\.[0-9]+\.[0-9]+)(-dev)?",/\1/p' build.zig.zon)
+          upstream_version=$(sed -nE 's/^[[:space:]]*\.version = "([^"]+)",/\1/p' build.zig.zon)
           if [[ -z "${upstream_version}" ]]; then
             echo "Unable to read the upstream Ghostty version" >&2
             exit 1
@@ -182,6 +184,9 @@ jobs:
             echo
             echo "基于 Ghostty ${{ steps.version.outputs.upstream_version }}。"
             echo
+            echo "- Ghostty main: \`${GHOSTTY_UPSTREAM_COMMIT}\`"
+            echo "- Ghostty Config main: \`${GHOSTTY_CONFIG_COMMIT}\`"
+            echo
             echo "> v0.3.0-cn.1 是新应用身份下首个支持自动更新的版本；v0.2.x 用户需要手动安装本版本一次。"
             echo
             if [[ "${{ steps.version.outputs.publish }}" == "true" ]]; then
@@ -220,13 +225,12 @@ jobs:
             "release/${ARCHIVE}.sha256" \
             "release/appcast.xml" \
             --draft \
-            --prerelease \
             --title "GhosttyCN ${{ steps.version.outputs.tag }}" \
             --notes-file "release/${ARCHIVE%.zip}.md"
 
       - name: Publish GitHub Release
         if: steps.version.outputs.publish == 'true'
-        run: gh release edit "${{ steps.version.outputs.tag }}" --draft=false --prerelease
+        run: gh release edit "${{ steps.version.outputs.tag }}" --draft=false
 
       - name: Configure GitHub Pages
         if: steps.version.outputs.publish == 'true'
