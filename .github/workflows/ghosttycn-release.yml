@@ -9,7 +9,7 @@ on:
       tag:
         description: "Release tag (vX.Y.Z-cn.N)"
         required: true
-        default: "v0.4.0-cn.1"
+        default: "v0.4.0-cn.2"
       publish:
         description: "Create the GitHub Release and deploy the appcast"
         required: true
@@ -158,6 +158,9 @@ jobs:
           test "$(/usr/libexec/PlistBuddy -c 'Print :SUVerifyUpdateBeforeExtraction' "${plist}")" = "true"
           ! /usr/libexec/PlistBuddy -c 'Print :SUEnableAutomaticChecks' "${plist}" >/dev/null 2>&1
           test -d "${APP}/Contents/Resources/zh-Hans.lproj"
+          test -f "${APP}/Contents/Resources/Base.lproj/MainMenu.nib"
+          test -f "${APP}/Contents/Resources/zh-Hans.lproj/MainMenu.strings"
+          test ! -e "${APP}/Contents/Resources/MainMenu.nib"
           codesign --verify --deep --strict --verbose=2 "${APP}"
           file "${APP}/Contents/MacOS/ghostty" | grep -q arm64
           file "${APP}/Contents/MacOS/ghostty" | grep -q x86_64
