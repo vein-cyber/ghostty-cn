@@ -232,6 +232,13 @@ fn display(
         .placement_id = d.placement_id,
     };
 
+    // A virtual placement (U=1) cannot also be a relative placement.
+    // Kitty checks this before even looking up the image.
+    if (d.virtual_placement and d.parent_id > 0) {
+        result.message = "EINVAL: virtual placement cannot refer to a parent";
+        return result;
+    }
+
     // Verify the requested image exists if we have an ID
     const storage = &terminal.screens.active.kitty_images;
     const img_: ?Image = if (d.image_id != 0)
@@ -249,25 +256,57 @@ fn display(
     // Location where the placement will go.
     const location: ImageStorage.Placement.Location = location: {
         // Virtual placements are not tracked
-        if (d.virtual_placement) {
-            if (d.parent_id > 0) {
-                result.message = "EINVAL: virtual placement cannot refer to a parent";
-                return result;
-            }
+        if (d.virtual_placement) break :location .virtual;
 
-            break :location .{ .virtual = {} };
+        // No parent reference (P=): the placement is pinned to the
+        // cursor. The cursor is always tracked but we don't want
+        // this pin to move with the cursor.
+        if (d.parent_id == 0) {
+            const pin = terminal.screens.active.pages.trackPin(
+                terminal.screens.active.cursor.page_pin.*,
+            ) catch |err| {
+                log.warn("failed to create pin for Kitty graphics err={}", .{err});
+                result.message = "EINVAL: failed to prepare terminal state";
+                return result;
+            };
+            break :location .{ .pin = pin };
         }
 
-        // Track a new pin for our cursor. The cursor is always tracked but we
-        // don't want this one to move with the cursor.
-        const pin = terminal.screens.active.pages.trackPin(
-            terminal.screens.active.cursor.page_pin.*,
+        // A parent reference makes this a relative placement: it is
+        // positioned relative to the parent placement instead of the
+        // cursor.
+
+        // The key of the placement being created, when it is
+        // addressable (an explicit placement ID). Needed for
+        // self-parent and cycle detection.
+        const child: ?ImageStorage.PlacementKey = if (d.placement_id > 0) .{
+            .image_id = img.id,
+            .placement_id = .{ .tag = .external, .id = d.placement_id },
+        } else null;
+
+        const parent = storage.resolveParent(
+            io,
+            terminal.screens.active,
+            child,
+            d.parent_id,
+            d.parent_placement_id,
         ) catch |err| {
-            log.warn("failed to create pin for Kitty graphics err={}", .{err});
-            result.message = "EINVAL: failed to prepare terminal state";
+            result.message = switch (err) {
+                error.ParentImageNotFound => "ENOPARENT: parent image not found",
+                error.ParentPlacementNotFound => "ENOPARENT: parent placement not found",
+                error.SelfParent => "EINVAL: placement cannot be its own parent",
+                error.Cycle => "ECYCLE: parent chain creates a cycle",
+                error.TooDeep => "ETOODEEP: parent chain too deep",
+                error.AncestorNotFound => "ENOENT: parent chain ancestor not found",
+            };
             return result;
         };
-        break :location .{ .pin = pin };
+
+        break :location .{ .relative = .{
+            .parent = parent,
+            .horizontal_offset = d.horizontal_offset,
+            .vertical_offset = d.vertical_offset,
+        } };
     };
 
     // Add the placement
@@ -304,9 +343,11 @@ fn display(
         return result;
     };
 
-    // Apply cursor movement setting. This only applies to pin placements.
+    // Apply cursor movement setting. This only applies to pin placements:
+    // relative placements never move the cursor regardless of C=, just
+    // like kitty.
     switch (p.location) {
-        .virtual => {},
+        .virtual, .relative => {},
         .pin => |pin| switch (d.cursor_movement) {
             .none => {},
             .after => {
@@ -436,12 +477,12 @@ fn loadAndAddImage(
 
     // If the image has no ID, we assign one
     if (loading.image.id == 0) {
-        loading.image.id = storage.next_image_id;
-        storage.next_image_id +%= 1;
-
-        // If the image also has no number then its auto-ID is "implicit".
-        // See the doc comment on Image.metadata.implicit_id for more detail.
-        if (loading.image.number == 0) loading.image.metadata.implicit_id = true;
+        if (loading.image.number > 0) {
+            loading.image.id = storage.nextImageId(.explicit);
+        } else {
+            loading.image.id = storage.nextImageId(.implicit);
+            loading.image.metadata.implicit_id = true;
+        }
     }
 
     // If this is chunked, this is the beginning of a new chunked transmission.
@@ -700,7 +741,7 @@ test "kittygfx chunked success response uses initial identifiers" {
         const resp = execute(io, alloc, &t, &cmd).?;
 
         try testing.expect(resp.ok());
-        try testing.expectEqual(@as(u32, 2147483647), resp.id);
+        try testing.expectEqual(@as(u32, 1), resp.id);
         try testing.expectEqual(@as(u32, 93), resp.image_number);
         try testing.expectEqual(@as(u32, 7), resp.placement_id);
 
@@ -708,7 +749,7 @@ test "kittygfx chunked success response uses initial identifiers" {
         var writer: std.Io.Writer = .fixed(&buf);
         try resp.encode(&writer);
         try testing.expectEqualStrings(
-            "\x1b_Gi=2147483647,I=93,p=7;OK\x1b\\",
+            "\x1b_Gi=1,I=93,p=7;OK\x1b\\",
             writer.buffered(),
         );
     }
@@ -1320,11 +1361,11 @@ test "kittygfx placement moves cursor past a tall image" {
     }).?;
     const first_pin = switch (first.location) {
         .pin => |pin| pin,
-        .virtual => unreachable,
+        .virtual, .relative => unreachable,
     };
     const second_pin = switch (second.location) {
         .pin => |pin| pin,
-        .virtual => unreachable,
+        .virtual, .relative => unreachable,
     };
     const first_y = t.screens.active.pages.pointFromPin(
         .screen,
@@ -1335,4 +1376,767 @@ test "kittygfx placement moves cursor past a tall image" {
         second_pin.*,
     ).?.screen.y;
     try testing.expectEqual(first_y + 8, second_y);
+}
+
+test "kittygfx unknown format responds with EINVAL" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+
+    const cmd = try command.Parser.parseString(
+        alloc,
+        "a=t,f=42,t=d,i=31,s=1,v=1;AAAA",
+    );
+    defer cmd.deinit(alloc);
+
+    const resp = execute(io, alloc, &t, &cmd).?;
+    try testing.expect(!resp.ok());
+    try testing.expectEqual(@as(u32, 31), resp.id);
+    try testing.expectEqualStrings("EINVAL: unsupported format", resp.message);
+    try testing.expectEqual(
+        @as(usize, 0),
+        t.screens.active.kitty_images.images.count(),
+    );
+}
+
+test "kittygfx unknown format on query responds with EINVAL" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+
+    const cmd = try command.Parser.parseString(
+        alloc,
+        "a=q,f=42,t=d,i=31,s=1,v=1;AAAA",
+    );
+    defer cmd.deinit(alloc);
+
+    const resp = execute(io, alloc, &t, &cmd).?;
+    try testing.expect(!resp.ok());
+    try testing.expectEqual(@as(u32, 31), resp.id);
+    try testing.expectEqualStrings("EINVAL: unsupported format", resp.message);
+}
+
+test "kittygfx zero format is rgba" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+
+    // Kitty treats f=0 as an absent f, i.e. RGBA.
+    const cmd = try command.Parser.parseString(
+        alloc,
+        "a=t,f=0,t=d,i=1,s=1,v=2,c=10,r=1;///////////",
+    );
+    defer cmd.deinit(alloc);
+
+    const resp = execute(io, alloc, &t, &cmd).?;
+    try testing.expect(resp.ok());
+
+    const img = t.screens.active.kitty_images.imageById(1).?;
+    try testing.expectEqual(command.Transmission.Format.rgba, img.format);
+}
+
+test "kittygfx unknown format with q=3 has no response" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+
+    // q above 2 is out of range in the spec but Kitty suppresses
+    // everything for anything above 1, so we must still parse it.
+    const cmd = try command.Parser.parseString(
+        alloc,
+        "a=t,f=42,t=d,i=31,q=3,s=1,v=1;AAAA",
+    );
+    defer cmd.deinit(alloc);
+
+    try testing.expect(execute(io, alloc, &t, &cmd) == null);
+}
+
+test "kittygfx out of range display keys are tolerated" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+
+    {
+        const cmd = try command.Parser.parseString(
+            alloc,
+            "a=T,f=24,t=d,i=31,s=1,v=1,C=2,U=2;AAAA",
+        );
+        defer cmd.deinit(alloc);
+
+        const resp = execute(io, alloc, &t, &cmd).?;
+        try testing.expect(resp.ok());
+        try testing.expectEqual(@as(u32, 31), resp.id);
+    }
+
+    // U=2 must behave like U=1, so the placement is virtual.
+    const storage = &t.screens.active.kitty_images;
+    var it = storage.placements.iterator();
+    const entry = it.next().?;
+    try testing.expect(entry.value_ptr.location == .virtual);
+}
+
+test "kittygfx number-based transmission assigns smallest free id" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+    const storage = &t.screens.active.kitty_images;
+
+    // Empty storage: the first free ID is 1, as in Kitty.
+    {
+        const cmd = try command.Parser.parseString(
+            alloc,
+            "a=t,f=24,s=1,v=1,I=42;/wAA",
+        );
+        defer cmd.deinit(alloc);
+        const resp = execute(io, alloc, &t, &cmd).?;
+        try testing.expect(resp.ok());
+        try testing.expectEqual(@as(u32, 1), resp.id);
+        try testing.expectEqual(@as(u32, 42), resp.image_number);
+    }
+
+    // Occupy ID 2 explicitly; the next number gets 3.
+    {
+        const cmd = try command.Parser.parseString(
+            alloc,
+            "a=t,f=24,s=1,v=1,i=2;/wAA",
+        );
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+    {
+        const cmd = try command.Parser.parseString(
+            alloc,
+            "a=t,f=24,s=1,v=1,I=43;/wAA",
+        );
+        defer cmd.deinit(alloc);
+        const resp = execute(io, alloc, &t, &cmd).?;
+        try testing.expect(resp.ok());
+        try testing.expectEqual(@as(u32, 3), resp.id);
+    }
+
+    // Deleting ID 1 opens a gap that the next number fills.
+    {
+        const cmd = try command.Parser.parseString(alloc, "a=d,d=I,i=1");
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd) == null);
+    }
+    {
+        const cmd = try command.Parser.parseString(
+            alloc,
+            "a=t,f=24,s=1,v=1,I=44;/wAA",
+        );
+        defer cmd.deinit(alloc);
+        const resp = execute(io, alloc, &t, &cmd).?;
+        try testing.expect(resp.ok());
+        try testing.expectEqual(@as(u32, 1), resp.id);
+    }
+
+    try testing.expectEqual(@as(usize, 3), storage.images.count());
+    try testing.expectEqual(@as(u32, 44), storage.imageById(1).?.number);
+    try testing.expectEqual(@as(u32, 0), storage.imageById(2).?.number);
+    try testing.expectEqual(@as(u32, 43), storage.imageById(3).?.number);
+}
+
+test "kittygfx number-based id assignment does not replace client image" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+    const storage = &t.screens.active.kitty_images;
+
+    // A client stores and places a red pixel on the ID the old wrapping
+    // counter would assign first.
+    {
+        const cmd = try command.Parser.parseString(
+            alloc,
+            "a=t,f=24,s=1,v=1,i=2147483647;/wAA",
+        );
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+    {
+        const cmd = try command.Parser.parseString(alloc, "a=p,i=2147483647,C=1");
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+
+    // A number-based transmission must not collide with it.
+    {
+        const cmd = try command.Parser.parseString(
+            alloc,
+            "a=t,f=24,s=1,v=1,I=42;AAD/",
+        );
+        defer cmd.deinit(alloc);
+        const resp = execute(io, alloc, &t, &cmd).?;
+        try testing.expect(resp.ok());
+        try testing.expectEqual(@as(u32, 1), resp.id);
+    }
+
+    // The client's image and placement are untouched.
+    try testing.expectEqual(@as(usize, 2), storage.images.count());
+    try testing.expectEqual(@as(usize, 1), storage.placements.count());
+    try testing.expectEqualSlices(
+        u8,
+        &.{ 255, 0, 0 },
+        storage.imageById(2147483647).?.data.bytes().?,
+    );
+}
+
+test "kittygfx implicit id assignment does not replace client image" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+    const storage = &t.screens.active.kitty_images;
+
+    // A client stores and places a red pixel on the ID the implicit
+    // counter assigns first.
+    {
+        const cmd = try command.Parser.parseString(
+            alloc,
+            "a=t,f=24,s=1,v=1,i=2147483647;/wAA",
+        );
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+    {
+        const cmd = try command.Parser.parseString(alloc, "a=p,i=2147483647,C=1");
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+
+    // Transmit without an ID or number: no response, and the counter
+    // skips over the in-use ID instead of replacing that image.
+    {
+        const cmd = try command.Parser.parseString(
+            alloc,
+            "a=t,f=24,s=1,v=1;AAD/",
+        );
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd) == null);
+    }
+
+    try testing.expectEqual(@as(usize, 2), storage.images.count());
+    try testing.expectEqual(@as(usize, 1), storage.placements.count());
+    try testing.expectEqualSlices(
+        u8,
+        &.{ 255, 0, 0 },
+        storage.imageById(2147483647).?.data.bytes().?,
+    );
+    const implicit = storage.imageById(2147483648).?;
+    try testing.expect(implicit.metadata.implicit_id);
+    try testing.expectEqualSlices(u8, &.{ 0, 0, 255 }, implicit.data.bytes().?);
+}
+
+test "kittygfx relative placement with missing parent image" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+    const storage = &t.screens.active.kitty_images;
+
+    {
+        const cmd = try command.Parser.parseString(
+            alloc,
+            "a=t,f=24,s=1,v=1,i=1;AAAA",
+        );
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+
+    // The parent image does not exist: the placement must be rejected
+    // with ENOPARENT, nothing may be created, and the cursor must not
+    // move (a relative placement never moves the cursor, and a failed
+    // one certainly must not).
+    {
+        const cmd = try command.Parser.parseString(
+            alloc,
+            "a=p,i=1,p=1,P=42,Q=1,H=2,V=2",
+        );
+        defer cmd.deinit(alloc);
+        const resp = execute(io, alloc, &t, &cmd).?;
+        try testing.expect(!resp.ok());
+        try testing.expectEqualStrings(
+            "ENOPARENT: parent image not found",
+            resp.message,
+        );
+    }
+
+    try testing.expectEqual(@as(usize, 0), storage.placements.count());
+    try testing.expectEqual(0, t.screens.active.cursor.x);
+    try testing.expectEqual(0, t.screens.active.cursor.y);
+}
+
+test "kittygfx relative placement with missing parent placement" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+    const storage = &t.screens.active.kitty_images;
+
+    for ([_][]const u8{
+        "a=t,f=24,s=1,v=1,i=1;AAAA",
+        "a=t,f=24,s=1,v=1,i=2;AAAA",
+    }) |input| {
+        const cmd = try command.Parser.parseString(alloc, input);
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+
+    // The parent image exists but has no placements at all.
+    {
+        const cmd = try command.Parser.parseString(alloc, "a=p,i=1,P=2");
+        defer cmd.deinit(alloc);
+        const resp = execute(io, alloc, &t, &cmd).?;
+        try testing.expect(!resp.ok());
+        try testing.expectEqualStrings(
+            "ENOPARENT: parent placement not found",
+            resp.message,
+        );
+    }
+
+    // The parent image has a placement, but not the requested one.
+    {
+        const cmd = try command.Parser.parseString(alloc, "a=p,i=2,p=1,C=1");
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+    {
+        const cmd = try command.Parser.parseString(alloc, "a=p,i=1,P=2,Q=9");
+        defer cmd.deinit(alloc);
+        const resp = execute(io, alloc, &t, &cmd).?;
+        try testing.expect(!resp.ok());
+        try testing.expectEqualStrings(
+            "ENOPARENT: parent placement not found",
+            resp.message,
+        );
+    }
+
+    try testing.expectEqual(@as(usize, 1), storage.placements.count());
+}
+
+test "kittygfx relative placement cannot parent itself" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+
+    for ([_][]const u8{
+        "a=t,f=24,s=1,v=1,i=1;AAAA",
+        "a=p,i=1,p=1,C=1",
+    }) |input| {
+        const cmd = try command.Parser.parseString(alloc, input);
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+
+    // Explicitly via Q, and implicitly when the Q=0 fallback selects
+    // the placement being replaced.
+    for ([_][]const u8{
+        "a=p,i=1,p=1,P=1,Q=1",
+        "a=p,i=1,p=1,P=1",
+    }) |input| {
+        const cmd = try command.Parser.parseString(alloc, input);
+        defer cmd.deinit(alloc);
+        const resp = execute(io, alloc, &t, &cmd).?;
+        try testing.expect(!resp.ok());
+        try testing.expectEqualStrings(
+            "EINVAL: placement cannot be its own parent",
+            resp.message,
+        );
+    }
+
+    // The original placement must be untouched.
+    const storage = &t.screens.active.kitty_images;
+    const p = storage.placements.get(.{
+        .image_id = 1,
+        .placement_id = .{ .tag = .external, .id = 1 },
+    }).?;
+    try testing.expect(p.location == .pin);
+}
+
+test "kittygfx relative placement cycle" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+
+    for ([_][]const u8{
+        "a=t,f=24,s=1,v=1,i=1;AAAA",
+        "a=p,i=1,p=1,C=1",
+        "a=p,i=1,p=2,P=1,Q=1",
+    }) |input| {
+        const cmd = try command.Parser.parseString(alloc, input);
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+
+    // Replacing placement 1 with a parent of placement 2 would create
+    // the cycle 1 -> 2 -> 1.
+    {
+        const cmd = try command.Parser.parseString(alloc, "a=p,i=1,p=1,P=1,Q=2");
+        defer cmd.deinit(alloc);
+        const resp = execute(io, alloc, &t, &cmd).?;
+        try testing.expect(!resp.ok());
+        try testing.expectEqualStrings(
+            "ECYCLE: parent chain creates a cycle",
+            resp.message,
+        );
+    }
+
+    // The original placement must be untouched, keeping the stored
+    // chains acyclic.
+    const storage = &t.screens.active.kitty_images;
+    const p = storage.placements.get(.{
+        .image_id = 1,
+        .placement_id = .{ .tag = .external, .id = 1 },
+    }).?;
+    try testing.expect(p.location == .pin);
+}
+
+test "kittygfx relative placement chain depth limit" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+
+    for ([_][]const u8{
+        "a=t,f=24,s=1,v=1,i=1;AAAA",
+        "a=p,i=1,p=1,C=1",
+    }) |input| {
+        const cmd = try command.Parser.parseString(alloc, input);
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+
+    // Chains of up to parent_chain_limit (8) links must work: these
+    // placements form the chain 9 -> 8 -> ... -> 2 -> 1.
+    for (2..10) |id| {
+        var buf: [64]u8 = undefined;
+        const cmd = try command.Parser.parseString(
+            alloc,
+            try std.fmt.bufPrint(&buf, "a=p,i=1,p={},P=1,Q={}", .{ id, id - 1 }),
+        );
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+
+    // One more link exceeds the limit.
+    {
+        const cmd = try command.Parser.parseString(alloc, "a=p,i=1,p=10,P=1,Q=9");
+        defer cmd.deinit(alloc);
+        const resp = execute(io, alloc, &t, &cmd).?;
+        try testing.expect(!resp.ok());
+        try testing.expectEqualStrings(
+            "ETOODEEP: parent chain too deep",
+            resp.message,
+        );
+    }
+
+    const storage = &t.screens.active.kitty_images;
+    try testing.expectEqual(@as(usize, 9), storage.placements.count());
+}
+
+test "kittygfx relative placement does not move cursor" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+    const storage = &t.screens.active.kitty_images;
+
+    // C is left at its default (move after) on the relative placement
+    // but it must never move the cursor.
+    for ([_][]const u8{
+        "a=t,f=24,s=1,v=1,i=1;AAAA",
+        "a=p,i=1,p=1,C=1",
+        "a=p,i=1,p=2,P=1,Q=1,H=3,V=2,c=2,r=2",
+    }) |input| {
+        const cmd = try command.Parser.parseString(alloc, input);
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+    try testing.expectEqual(0, t.screens.active.cursor.x);
+    try testing.expectEqual(0, t.screens.active.cursor.y);
+
+    // The stored placement carries the parent link and offsets.
+    const p = storage.placements.get(.{
+        .image_id = 1,
+        .placement_id = .{ .tag = .external, .id = 2 },
+    }).?;
+    const rel = p.location.relative;
+    try testing.expect(rel.parent.eql(.{
+        .image_id = 1,
+        .placement_id = .{ .tag = .external, .id = 1 },
+    }));
+    try testing.expectEqual(@as(i32, 3), rel.horizontal_offset);
+    try testing.expectEqual(@as(i32, 2), rel.vertical_offset);
+}
+
+test "kittygfx virtual placement with parent rejected before image lookup" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+
+    // Kitty rejects U=1 + P= before checking that the image exists,
+    // so this must not be ENOENT.
+    const cmd = try command.Parser.parseString(alloc, "a=p,i=42,U=1,P=1");
+    defer cmd.deinit(alloc);
+    const resp = execute(io, alloc, &t, &cmd).?;
+    try testing.expect(!resp.ok());
+    try testing.expectEqualStrings(
+        "EINVAL: virtual placement cannot refer to a parent",
+        resp.message,
+    );
+}
+
+test "kittygfx deleting a parent deletes relative placements transitively" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+    const storage = &t.screens.active.kitty_images;
+
+    // Root (pin) <- child <- grandchild
+    for ([_][]const u8{
+        "a=t,f=24,s=1,v=1,i=1;AAAA",
+        "a=p,i=1,p=1,C=1",
+        "a=p,i=1,p=2,P=1,Q=1",
+        "a=p,i=1,p=3,P=1,Q=2",
+    }) |input| {
+        const cmd = try command.Parser.parseString(alloc, input);
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+    try testing.expectEqual(@as(usize, 3), storage.placements.count());
+
+    // Deleting the middle placement takes the grandchild with it but
+    // leaves the root.
+    {
+        const cmd = try command.Parser.parseString(alloc, "a=d,d=i,i=1,p=2");
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd) == null);
+    }
+    try testing.expectEqual(@as(usize, 1), storage.placements.count());
+    try testing.expect(storage.placements.contains(.{
+        .image_id = 1,
+        .placement_id = .{ .tag = .external, .id = 1 },
+    }));
+
+    // Deleting the root removes the remaining placement, and the
+    // image itself is retained (lowercase delete).
+    {
+        const cmd = try command.Parser.parseString(alloc, "a=d,d=i,i=1,p=1");
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd) == null);
+    }
+    try testing.expectEqual(@as(usize, 0), storage.placements.count());
+    try testing.expect(storage.imageById(1) != null);
+}
+
+test "kittygfx retransmitting parent image deletes relative placements" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+    const storage = &t.screens.active.kitty_images;
+
+    // Image 2's placement is relative to image 1's placement.
+    for ([_][]const u8{
+        "a=t,f=24,s=1,v=1,i=1;AAAA",
+        "a=t,f=24,s=1,v=1,i=2;AAAA",
+        "a=p,i=1,p=1,C=1",
+        "a=p,i=2,p=1,P=1,Q=1",
+    }) |input| {
+        const cmd = try command.Parser.parseString(alloc, input);
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+    try testing.expectEqual(@as(usize, 2), storage.placements.count());
+
+    // Retransmitting image 1 removes its placements, which orphans
+    // and removes image 2's placement too. Image 2 is left without
+    // any placement so it is freed as well: retransmission deletes
+    // with uppercase semantics, and kitty also removes an image whose
+    // last placement died from a broken parent chain.
+    {
+        const cmd = try command.Parser.parseString(
+            alloc,
+            "a=t,f=24,s=1,v=1,i=1;AAAA",
+        );
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+    try testing.expectEqual(@as(usize, 0), storage.placements.count());
+    try testing.expect(storage.imageById(2) == null);
+}
+
+test "kittygfx relative placement parent fallback picks lowest external id" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+    const storage = &t.screens.active.kitty_images;
+
+    for ([_][]const u8{
+        "a=t,f=24,s=1,v=1,i=1;AAAA",
+        "a=t,f=24,s=1,v=1,i=2;AAAA",
+        "a=p,i=1,p=7,C=1",
+        "a=p,i=1,p=3,C=1",
+        "a=p,i=2,P=1",
+    }) |input| {
+        const cmd = try command.Parser.parseString(alloc, input);
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+
+    var it = storage.placements.iterator();
+    const rel = while (it.next()) |entry| {
+        if (entry.key_ptr.image_id == 2) break entry.value_ptr.location.relative;
+    } else return error.PlacementNotFound;
+    try testing.expect(rel.parent.eql(.{
+        .image_id = 1,
+        .placement_id = .{ .tag = .external, .id = 3 },
+    }));
+}
+
+test "kittygfx placements created after a full reset are retained" {
+    // Regression test: Screen.reset reuses the cursor's tracked pin
+    // but PageList.reset marked it garbage. Placements copy the cursor
+    // pin, so every placement created after a reset was born garbage
+    // and silently swept by the next placement command.
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 24, .cols = 80 });
+    defer t.deinit(alloc);
+    const storage = &t.screens.active.kitty_images;
+
+    t.fullReset();
+
+    for ([_][]const u8{
+        "a=t,f=24,s=1,v=1,i=1;AAAA",
+        "a=p,i=1,p=1,C=1",
+        "a=p,i=1,p=2,C=1",
+        "a=p,i=1,p=3,P=1,Q=2",
+    }) |input| {
+        const cmd = try command.Parser.parseString(alloc, input);
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+    try testing.expectEqual(@as(usize, 3), storage.placements.count());
+}
+
+test "kittygfx relative placement with pruned parent is ENOPARENT" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+    const storage = &t.screens.active.kitty_images;
+
+    for ([_][]const u8{
+        "a=t,f=24,s=1,v=1,i=1;AAAA",
+        "a=p,i=1,p=1,C=1",
+    }) |input| {
+        const cmd = try command.Parser.parseString(alloc, input);
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+
+    // The parent's tracked content is pruned from history but the
+    // placement hasn't been swept yet. The put must reap it and answer
+    // ENOPARENT rather than storing an orphan against it.
+    const parent = storage.placements.getPtr(.{
+        .image_id = 1,
+        .placement_id = .{ .tag = .external, .id = 1 },
+    }).?;
+    parent.location.pin.garbage = true;
+
+    {
+        const cmd = try command.Parser.parseString(alloc, "a=p,i=1,p=2,P=1,Q=1");
+        defer cmd.deinit(alloc);
+        const resp = execute(io, alloc, &t, &cmd).?;
+        try testing.expect(!resp.ok());
+        try testing.expectEqualStrings(
+            "ENOPARENT: parent placement not found",
+            resp.message,
+        );
+    }
+    try testing.expectEqual(@as(usize, 0), storage.placements.count());
+}
+
+test "kittygfx uppercase delete frees image of cascaded placements" {
+    const testing = std.testing;
+    const alloc = testing.allocator;
+    const io = testing.io;
+
+    var t = try Terminal.init(io, alloc, .{ .rows = 5, .cols = 5 });
+    defer t.deinit(alloc);
+    const storage = &t.screens.active.kitty_images;
+
+    for ([_][]const u8{
+        "a=t,f=24,s=1,v=1,i=1;AAAA",
+        "a=p,i=1,p=1,C=1",
+        "a=p,i=1,p=2,P=1,Q=1",
+    }) |input| {
+        const cmd = try command.Parser.parseString(alloc, input);
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd).?.ok());
+    }
+
+    // The uppercase delete only matches placement 1. The cascade
+    // removes placement 2, leaving the image without placements, so
+    // the image must be freed too.
+    {
+        const cmd = try command.Parser.parseString(alloc, "a=d,d=I,i=1,p=1");
+        defer cmd.deinit(alloc);
+        try testing.expect(execute(io, alloc, &t, &cmd) == null);
+    }
+    try testing.expectEqual(@as(usize, 0), storage.placements.count());
+    try testing.expect(storage.imageById(1) == null);
 }

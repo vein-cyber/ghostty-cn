@@ -345,7 +345,12 @@ pub const Handler = struct {
             },
             .active_status_display => self.terminal.status_display = value,
             .decaln => try self.terminal.decaln(),
-            .full_reset => self.terminal.fullReset(),
+            .full_reset => {
+                self.terminal.fullReset();
+
+                // Clear the progress bar
+                self.progressReport(.{ .state = .remove });
+            },
             .start_hyperlink => try self.terminal.screens.active.startHyperlink(value.uri, value.id),
             .end_hyperlink => self.terminal.screens.active.endHyperlink(),
             .semantic_prompt => try self.terminal.semanticPrompt(value),
@@ -2504,6 +2509,15 @@ test "progress_report effect callback" {
         try testing.expectEqual(case.state, S.last_state);
         try testing.expectEqual(case.progress, S.last_progress);
     }
+
+    // A full reset (RIS) removes any active progress bar.
+    s.nextSlice("\x1B]9;4;1;50\x1B\\");
+    try testing.expectEqual(@as(usize, cases.len + 1), S.count);
+    try testing.expectEqual(osc.Command.ProgressReport.State.set, S.last_state);
+    s.nextSlice("\x1Bc");
+    try testing.expectEqual(@as(usize, cases.len + 2), S.count);
+    try testing.expectEqual(osc.Command.ProgressReport.State.remove, S.last_state);
+    try testing.expectEqual(@as(?u8, null), S.last_progress);
 }
 
 test "clipboard_write effect callback" {
@@ -2797,9 +2811,12 @@ test "kitty_keyboard_query" {
     defer t.deinit(testing.allocator);
 
     const S = struct {
-        var written: ?[:0]const u8 = null;
+        var written: ?[]const u8 = null;
+        var written_buf: [64]u8 = undefined;
         fn writePty(_: *Handler, data: [:0]const u8) void {
-            written = data;
+            std.debug.assert(data.len <= written_buf.len);
+            @memcpy(written_buf[0..data.len], data);
+            written = written_buf[0..data.len];
         }
     };
     S.written = null;
@@ -2826,9 +2843,12 @@ test "xtversion default" {
     defer t.deinit(testing.allocator);
 
     const S = struct {
-        var written: ?[:0]const u8 = null;
+        var written: ?[]const u8 = null;
+        var written_buf: [64]u8 = undefined;
         fn writePty(_: *Handler, data: [:0]const u8) void {
-            written = data;
+            std.debug.assert(data.len <= written_buf.len);
+            @memcpy(written_buf[0..data.len], data);
+            written = written_buf[0..data.len];
         }
     };
     S.written = null;
@@ -2849,9 +2869,12 @@ test "xtversion with effect" {
     defer t.deinit(testing.allocator);
 
     const S = struct {
-        var written: ?[:0]const u8 = null;
+        var written: ?[]const u8 = null;
+        var written_buf: [64]u8 = undefined;
         fn writePty(_: *Handler, data: [:0]const u8) void {
-            written = data;
+            std.debug.assert(data.len <= written_buf.len);
+            @memcpy(written_buf[0..data.len], data);
+            written = written_buf[0..data.len];
         }
         fn xtversion(_: *Handler) []const u8 {
             return "ghostty 1.2.3";
@@ -2875,9 +2898,12 @@ test "xtversion with empty string effect" {
     defer t.deinit(testing.allocator);
 
     const S = struct {
-        var written: ?[:0]const u8 = null;
+        var written: ?[]const u8 = null;
+        var written_buf: [64]u8 = undefined;
         fn writePty(_: *Handler, data: [:0]const u8) void {
-            written = data;
+            std.debug.assert(data.len <= written_buf.len);
+            @memcpy(written_buf[0..data.len], data);
+            written = written_buf[0..data.len];
         }
         fn xtversion(_: *Handler) []const u8 {
             return "";
