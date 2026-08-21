@@ -16,7 +16,10 @@ settings are excluded from visual management.
 
 `zh-Hans-localization.patch` extends the integration with simplified-Chinese
 navigation, setting names, inline guidance, controls, built-in tools, and
-dialogs. English remains the source and fallback language.
+dialogs. It also removes the GTK and Linux panels from GhosttyCN's navigation,
+renames the macOS panel to `Advanced` (`高级`), and redirects the legacy platform
+routes while keeping their configuration keys available for raw editing and
+round-trip serialization. English remains the source and fallback language.
 
 ## Rebuilding the bundled resources
 

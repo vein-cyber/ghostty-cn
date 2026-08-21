@@ -3783,3 +3783,582 @@ index 5b5f434..eac8af1 100644
 +        </p>
      {/if}
  </Page>
+
+diff --git a/src/lib/settings/navigation.ts b/src/lib/settings/navigation.ts
+index 30e0b71..71c3726 100644
+--- a/src/lib/settings/navigation.ts
++++ b/src/lib/settings/navigation.ts
+@@ -9,9 +9,7 @@ import fonts from "$lib/images/tabs/fonts.webp";
+ import keybinds from "$lib/images/tabs/keybinds.webp";
+ import mouse from "$lib/images/tabs/mouse.webp";
+ 
+-import gtk from "$lib/images/tabs/gtk.svg";
+-import linux from "$lib/images/tabs/linux.webp";
+-import macos from "$lib/images/tabs/macos.webp";
++import advanced from "$lib/images/tabs/advanced.svg";
+ 
+ import {registry} from "./registry";
+ import type {PreviewKey} from "./types";
+@@ -62,11 +60,7 @@ export const navigation = [
+             {
+                 id: "bell",
+                 name: "Bell",
+-                settings: [
+-                    "bellFeatures",
+-                    "bellAudioPath",
+-                    "bellAudioVolume"
+-                ]
++                settings: ["bellFeatures", "bellAudioPath", "bellAudioVolume"]
+             },
+             {
+                 id: "startup",
+@@ -116,12 +110,7 @@ export const navigation = [
+             {
+                 id: "shell",
+                 name: "",
+-                settings: [
+-                    "shellIntegration",
+-                    "shellIntegrationFeatures",
+-                    "term",
+-                    "titleReport"
+-                ]
++                settings: ["shellIntegration", "shellIntegrationFeatures", "term", "titleReport"]
+             },
+             {
+                 id: "notifications",
+@@ -148,11 +137,7 @@ export const navigation = [
+                 id: "compatibility",
+                 name: "Protocol & Compatibility",
+                 note: "These settings control low-level terminal protocol behavior. Only change these if you know what you're doing.",
+-                settings: [
+-                    "oscColorReportFormat",
+-                    "enquiryResponse",
+-                    "vtKamAllowed"
+-                ]
++                settings: ["oscColorReportFormat", "enquiryResponse", "vtKamAllowed"]
+             }
+         ]
+     },
+@@ -300,9 +285,7 @@ export const navigation = [
+                 name: "Color Palette",
+                 note: "The first 16 colors are the most commonly displayed colors in the terminal.\n\nColors 1-8 are typically black, red, green, yellow, blue, magenta, cyan, and white.\nColors 9-16 are typically \"brighter\" variants of these colors.",
+                 preview: "palette",
+-                settings: [
+-                    "palette"
+-                ]
++                settings: ["palette"]
+             }
+         ]
+     },
+@@ -342,12 +325,7 @@ export const navigation = [
+                 id: "styles",
+                 name: "Font Styles",
+                 note: "Named font styles for the fields above. For example for <code>Ioveska Heavy</code> you would use a style of <code>Heavy</code>. Alternately you can set the style to <code>false</code> to completely disable the style and revert to default style.",
+-                settings: [
+-                    "fontStyle",
+-                    "fontStyleBold",
+-                    "fontStyleItalic",
+-                    "fontStyleBoldItalic"
+-                ]
++                settings: ["fontStyle", "fontStyleBold", "fontStyleItalic", "fontStyleBoldItalic"]
+             },
+             {
+                 id: "variations",
+@@ -390,9 +368,7 @@ export const navigation = [
+             {
+                 id: "keybinds",
+                 name: "",
+-                settings: [
+-                    "keybind"
+-                ]
++                settings: ["keybind"]
+             }
+         ]
+     },
+@@ -418,62 +394,10 @@ export const navigation = [
+             }
+         ]
+     },
+-    {
+-        id: "gtk",
+-        icon: gtk,
+-        name: "GTK",
+-        groups: [
+-            {
+-                id: "main",
+-                name: "",
+-                settings: [
+-                    "language",
+-                    "class",
+-                    "x11InstanceName",
+-                    "gtkSingleInstance",
+-                    "gtkCustomCss",
+-                    "gtkOpenglDebug",
+-                    "appNotifications"
+-                ]
+-            },
+-            {
+-                id: "tabs",
+-                name: "Titlebar & Tabs",
+-                settings: [
+-                    "gtkToolbarStyle",
+-                    "gtkTitlebarStyle",
+-                    "gtkTabsLocation",
+-                    "gtkWideTabs",
+-                    "gtkTitlebar",
+-                    "gtkTitlebarHideWhenMaximized",
+-                    "gtkQuickTerminalLayer",
+-                    "gtkQuickTerminalNamespace"
+-                ]
+-            }
+-        ]
+-    },
+-    {
+-        id: "linux",
+-        icon: linux,
+-        name: "Linux",
+-        groups: [
+-            {
+-                id: "main",
+-                name: "",
+-                settings: [
+-                    "asyncBackend",
+-                    "linuxCgroup",
+-                    "linuxCgroupMemoryLimit",
+-                    "linuxCgroupProcessesLimit",
+-                    "linuxCgroupHardFail"
+-                ]
+-            }
+-        ]
+-    },
+     {
+         id: "macos",
+-        icon: macos,
+-        name: "macOS",
++        icon: advanced,
++        name: "Advanced",
+         groups: [
+             {
+                 id: "main",
+@@ -512,16 +436,47 @@ export const navigation = [
+ 
+ export default navigation;
+ 
+-type TopLevelPanelIDs = typeof navigation[number]["id"];
++type TopLevelPanelIDs = (typeof navigation)[number]["id"];
+ type TabGroups = TopLevelPanelIDs[][];
+ 
+ export const tabGroups: TabGroups = [
+     ["application", "terminal", "clipboard"],
+     ["window", "colors", "fonts"],
+     ["keybinds", "mouse"],
+-    ["gtk", "linux", "macos"]
++    ["macos"]
+ ];
+ 
++export const intentionallyUncategorizedSettings = new Set<keyof typeof registry>([
++    "autoUpdate",
++    "autoUpdateChannel",
++    "language",
++    "class",
++    "x11InstanceName",
++    "gtkSingleInstance",
++    "gtkCustomCss",
++    "gtkOpenglDebug",
++    "appNotifications",
++    "gtkToolbarStyle",
++    "gtkTitlebarStyle",
++    "gtkTabsLocation",
++    "gtkWideTabs",
++    "gtkTitlebar",
++    "gtkTitlebarHideWhenMaximized",
++    "gtkQuickTerminalLayer",
++    "gtkQuickTerminalNamespace",
++    "asyncBackend",
++    "linuxCgroup",
++    "linuxCgroupMemoryLimit",
++    "linuxCgroupProcessesLimit",
++    "linuxCgroupHardFail"
++]);
++
++export const legacyPlatformCategories = new Set(["gtk", "linux"]);
++
++export function resolveSettingsCategory(categoryId: string): string {
++    return legacyPlatformCategories.has(categoryId) ? "macos" : categoryId;
++}
++
+ // Validation: run at build time or in dev
+ export function validateNavigation() {
+     const seen = new Set<string>();
+@@ -539,8 +494,12 @@ export function validateNavigation() {
+     };
+     walk(navigation);
+ 
+-    for (const id of Object.keys(registry)) {
+-        if (!seen.has(id)) throw new Error(`Setting "${id}" exists in registry but is not categorized in navigation`);
++    for (const id of Object.keys(registry) as Array<keyof typeof registry>) {
++        if (!seen.has(id) && !intentionallyUncategorizedSettings.has(id)) {
++            throw new Error(
++                `Setting "${id}" exists in registry but is not categorized in navigation`
++            );
++        }
+     }
+ }
+
+diff --git a/src/lib/stores/config.svelte.test.ts b/src/lib/stores/config.svelte.test.ts
+index d8b3fc7..5f316ee 100644
+--- a/src/lib/stores/config.svelte.test.ts
++++ b/src/lib/stores/config.svelte.test.ts
+@@ -1,5 +1,12 @@
+ import {afterEach, describe, expect, it} from "vitest";
+-import config, {defaults, diff, diffFromDefaults, isNonDefault, load, resetSetting} from "./config.svelte";
++import config, {
++    defaults,
++    diff,
++    diffFromDefaults,
++    isNonDefault,
++    load,
++    resetSetting
++} from "./config.svelte";
+ import {serialize} from "$lib/utils/parse";
+ 
+ // These lock in the flat-string store contract: every value is a string | string[], and
+@@ -9,7 +16,18 @@ import {serialize} from "$lib/utils/parse";
+ 
+ afterEach(() => {
+     // config is a module singleton; reset anything a test touched
+-    for (const k of ["fontSize", "desktopNotifications", "fontFamily", "windowWidth", "background", "keybind", "palette"] as const) {
++    for (const k of [
++        "fontSize",
++        "desktopNotifications",
++        "fontFamily",
++        "windowWidth",
++        "background",
++        "keybind",
++        "palette",
++        "gtkTitlebar",
++        "linuxCgroup",
++        "macosWindowShadow"
++    ] as const) {
+         resetSetting(k);
+     }
+ });
+@@ -100,4 +118,14 @@ describe("round-trip diff -> serialize", () => {
+         config.fontSize = "22";
+         expect(diffFromDefaults({fontSize: "22"})["font-size"]).toBe("22");
+     });
++
++    it("preserves hidden GTK and Linux settings while editing macOS settings", () => {
++        load({gtkTitlebar: "false", linuxCgroup: "always"});
++        config.macosWindowShadow = "false";
++
++        const text = serialize(diff(), false);
++        expect(text).toContain("gtk-titlebar = false");
++        expect(text).toContain("linux-cgroup = always");
++        expect(text).toContain("macos-window-shadow = false");
++    });
+ });
+
+diff --git a/src/lib/i18n.ts b/src/lib/i18n.ts
+index a852efa..a99e6e2 100644
+--- a/src/lib/i18n.ts
++++ b/src/lib/i18n.ts
+@@ -10,6 +10,7 @@ const zhHansLabels: Record<string, string> = {
+     "Allow terminal to read clipboard": "允许终端读取剪贴板",
+     "Allow terminal to write clipboard": "允许终端写入剪贴板",
+     "Alpha blending colorspace": "Alpha 混合色彩空间",
++    "Advanced": "高级",
+     "Animation duration": "动画时长",
+     "App Icon": "应用图标",
+     "App notifications": "应用内通知",
+
+diff --git a/src/routes/settings/[category]/+page.svelte b/src/routes/settings/[category]/+page.svelte
+index eac8af1..d320850 100644
+--- a/src/routes/settings/[category]/+page.svelte
++++ b/src/routes/settings/[category]/+page.svelte
+@@ -2,13 +2,15 @@
+     import Page from "$lib/views/Page.svelte";
+ 
+     import {page} from "$app/stores";
++    import {goto} from "$app/navigation";
++    import {browser} from "$app/environment";
+     import Switch from "$lib/components/settings/Switch.svelte";
+     import Item from "$lib/components/settings/Item.svelte";
+     import Group from "$lib/components/settings/Group.svelte";
+     import Separator from "$lib/components/settings/Separator.svelte";
+ 
+     import registry from "$lib/settings/registry";
+-    import navigation from "$lib/settings/navigation";
++    import navigation, {resolveSettingsCategory} from "$lib/settings/navigation";
+     import config, {isNonDefault, resetSetting, setSetting} from "$lib/stores/config.svelte";
+     import {
+         activeThemeName,
+@@ -49,6 +51,20 @@
+     } from "$lib/settings/types";
+     import {isChinese, localizeLabel, localizeText} from "$lib/i18n";
+ 
++    $effect(() => {
++        const categoryId = $page.params.category;
++        if (browser && categoryId) {
++            const resolvedCategoryId = resolveSettingsCategory(categoryId);
++            if (resolvedCategoryId !== categoryId) {
++                // resolve() handles the configured base path; the disabled rule is deprecated.
++                // eslint-disable-next-line svelte/no-goto-without-base
++                void goto(resolve("/settings/[category]", {category: resolvedCategoryId}), {
++                    replaceState: true
++                });
++            }
++        }
++    });
++
+     const category = $derived(navigation.find((c) => c.id === $page.params.category));
+     const title = $derived(localizeLabel(category?.name ?? $page.params.category ?? ""));
+
+diff --git a/src/lib/images/tabs/advanced.svg b/src/lib/images/tabs/advanced.svg
+new file mode 100644
+index 0000000..2088215
+--- /dev/null
++++ b/src/lib/images/tabs/advanced.svg
+@@ -0,0 +1,14 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
++    <rect x="4" y="4" width="88" height="88" rx="22" fill="#292a31"/>
++    <g fill="none" stroke="#c9cbd2" stroke-linecap="round" stroke-width="6">
++        <path d="M22 28h52"/>
++        <path d="M22 48h52"/>
++        <path d="M22 68h52"/>
++    </g>
++    <g fill="#f4f5f7" stroke="#747783" stroke-width="3">
++        <circle cx="36" cy="28" r="7"/>
++        <circle cx="61" cy="48" r="7"/>
++        <circle cx="44" cy="68" r="7"/>
++    </g>
++</svg>
+
+diff --git a/src/lib/settings/navigation.test.ts b/src/lib/settings/navigation.test.ts
+new file mode 100644
+index 0000000..940e770
+--- /dev/null
++++ b/src/lib/settings/navigation.test.ts
+@@ -0,0 +1,37 @@
++import {describe, expect, it} from "vitest";
++
++import {registry} from "./registry";
++import navigation, {
++    intentionallyUncategorizedSettings,
++    resolveSettingsCategory,
++    tabGroups,
++    validateNavigation
++} from "./navigation";
++
++describe("platform navigation", () => {
++    it("shows only the renamed advanced platform panel", () => {
++        const ids = navigation.map((panel) => panel.id);
++        expect(ids).not.toContain("gtk");
++        expect(ids).not.toContain("linux");
++
++        const advanced = navigation.find((panel) => panel.id === "macos");
++        expect(advanced?.name).toBe("Advanced");
++        expect(advanced?.icon).toMatch(/^data:image\/svg\+xml/);
++        expect(tabGroups.at(-1)).toEqual(["macos"]);
++    });
++
++    it("keeps hidden platform settings registered but intentionally uncategorized", () => {
++        expect(intentionallyUncategorizedSettings.has("gtkTitlebar")).toBe(true);
++        expect(intentionallyUncategorizedSettings.has("linuxCgroup")).toBe(true);
++        for (const settingId of intentionallyUncategorizedSettings) {
++            expect(registry[settingId]).toBeDefined();
++        }
++        expect(() => validateNavigation()).not.toThrow();
++    });
++
++    it("redirects legacy platform routes to the advanced panel", () => {
++        expect(resolveSettingsCategory("gtk")).toBe("macos");
++        expect(resolveSettingsCategory("linux")).toBe("macos");
++        expect(resolveSettingsCategory("colors")).toBe("colors");
++    });
++});
+diff --git a/src/lib/i18n.ts b/src/lib/i18n.ts
+index a99e6e2..c23d991 100644
+--- a/src/lib/i18n.ts
++++ b/src/lib/i18n.ts
+@@ -567,8 +567,12 @@ export function isChinese(): boolean {
+     return locale.toLocaleLowerCase().startsWith("zh");
+ }
+ 
++export function zhHansLabel(value: string): string {
++    return zhHansLabels[value] || value;
++}
++
+ export function localizeLabel(value: string): string {
+-    return isChinese() ? zhHansLabels[value] || value : value;
++    return isChinese() ? zhHansLabel(value) : value;
+ }
+ 
+ export const localizeText = localizeLabel;
+diff --git a/src/lib/stores/search.svelte.ts b/src/lib/stores/search.svelte.ts
+index b279784..972d42f 100644
+--- a/src/lib/stores/search.svelte.ts
++++ b/src/lib/stores/search.svelte.ts
+@@ -2,8 +2,7 @@ import {resolve} from "$app/paths";
+ import navigation from "$lib/settings/navigation";
+ import registry from "$lib/settings/registry";
+ import type {SettingsRegistry} from "$lib/settings/types";
+-import {localizeLabel} from "$lib/i18n";
+-
++import {zhHansLabel} from "$lib/i18n";
+ 
+ // FIXME: this is a bit of a mess, now that we separated this logic from the UI,
+ // consider refactoring this to be more maintainable and testable. Also consider
+@@ -14,7 +13,7 @@ export const searchState = $state({
+     query: "",
+     selectedIndex: -1,
+     activeIndex: -1,
+-    selectedId: "",
++    selectedId: ""
+ });
+ 
+ export function setQuery(query: string) {
+@@ -27,7 +26,9 @@ export function setQuery(query: string) {
+ const searchTokens = $derived.by(() => searchState.query.split(/\s+/).filter(Boolean));
+ const searchResults = $derived.by(() => {
+     if (!searchTokens.length) return [];
+-    return searchableSettings.filter(result => searchTokens.every(token => result.searchableText.includes(token)));
++    return searchableSettings.filter((result) =>
++        searchTokens.every((token) => result.searchableText.includes(token))
++    );
+ });
+ 
+ export function getResults() {
+@@ -47,11 +48,11 @@ const groupedSearchResults = $derived.by(() => {
+         categoryName: string;
+         categoryIcon: string;
+         categoryRoute: string;
+-        results: Array<SearchResult & {index: number;}>;
++        results: Array<SearchResult & {index: number}>;
+     }> = [];
+ 
+     searchResults.forEach((result, index) => {
+-        const existing = grouped.find(group => group.categoryId === result.categoryId);
++        const existing = grouped.find((group) => group.categoryId === result.categoryId);
+         if (existing) {
+             existing.results.push({...result, index});
+             return;
+@@ -62,7 +63,7 @@ const groupedSearchResults = $derived.by(() => {
+             categoryName: result.categoryName,
+             categoryIcon: result.categoryIcon,
+             categoryRoute: resolve("/settings/[category]", {category: result.categoryId}),
+-            results: [{...result, index}],
++            results: [{...result, index}]
+         });
+     });
+ 
+@@ -77,8 +78,6 @@ export function hasGroupedResults() {
+     return groupedSearchResults.length > 0;
+ }
+ 
+-
+-
+ export interface SearchResult {
+     categoryId: string;
+     categoryName: string;
+@@ -96,15 +95,16 @@ export interface SearchResult {
+ const stripHtmlRegex = (html: string) => html.replace(/<[^>]*>/g, "");
+ 
+ export function stripMarkdownRegex(md: string): string {
+-    return md
+-        // Remove inline code markers
+-        .replace(/`([^`]+)`/g, "$1")
+-        // Remove list markers (-, *, +, 1.)
+-        .replace(/^\s*([-*+]|\d+\.)\s+/gm, "")
+-        .trim();
++    return (
++        md
++            // Remove inline code markers
++            .replace(/`([^`]+)`/g, "$1")
++            // Remove list markers (-, *, +, 1.)
++            .replace(/^\s*([-*+]|\d+\.)\s+/gm, "")
++            .trim()
++    );
+ }
+ 
+-
+ // TODO: this is pretty inefficient, we should probably build an index for this instead
+ // of doing a linear search through all settings every time. However, it is unlikely that
+ // there will be enough settings to cause performance issues, so this is good enough for now.
+@@ -116,14 +116,16 @@ const searchableSettings = (() => {
+             for (const id of group.settings) {
+                 const setting = registry[id] as SettingsRegistry[keyof SettingsRegistry];
+                 const cleanedNote = setting.note ? stripHtmlRegex(setting.note) : "";
+-                const cleanedDescription = setting.description ? stripMarkdownRegex(setting.description) : "";
++                const cleanedDescription = setting.description
++                    ? stripMarkdownRegex(setting.description)
++                    : "";
+                 const searchableText = [
+                     category.name,
+-                    localizeLabel(category.name),
++                    zhHansLabel(category.name),
+                     group.name,
+-                    localizeLabel(group.name),
++                    zhHansLabel(group.name),
+                     setting.name,
+-                    localizeLabel(setting.name),
++                    zhHansLabel(setting.name),
+                     cleanedNote,
+                     cleanedDescription
+                 ];
+@@ -138,7 +140,7 @@ const searchableSettings = (() => {
+                     routeKey: `${category.id}:${id}`,
+                     settingId: id,
+                     settingName: setting.name,
+-                    searchableText: searchableText.join(" ").toLocaleLowerCase(),
++                    searchableText: searchableText.join(" ").toLocaleLowerCase()
+                 });
+             }
+         }
+@@ -146,7 +148,6 @@ const searchableSettings = (() => {
+     return results;
+ })();
+ 
+-
+ export interface HighlightPart {
+     matched: boolean;
+     text: string;
+@@ -154,7 +155,7 @@ export interface HighlightPart {
+ 
+ // TODO: this is a bit janky, consider a more robust solution for keeping track of active/selected
+ // search results and their corresponding DOM elements
+-export function getHighlightParts(value: string,): HighlightPart[] {
++export function getHighlightParts(value: string): HighlightPart[] {
+     if (!value) return [];
+ 
+     const tokens = searchTokens;
+diff --git a/src/lib/stores/search.svelte.test.ts b/src/lib/stores/search.svelte.test.ts
+new file mode 100644
+index 0000000..c3b9e77
+--- /dev/null
++++ b/src/lib/stores/search.svelte.test.ts
+@@ -0,0 +1,23 @@
++import {afterEach, describe, expect, it} from "vitest";
++
++import {getResults, setQuery} from "./search.svelte";
++
++afterEach(() => setQuery(""));
++
++describe("platform navigation search", () => {
++    it.each(["Advanced", "高级"])("finds the advanced panel using %s", (query) => {
++        setQuery(query);
++
++        const results = getResults();
++        expect(results.length).toBeGreaterThan(0);
++        expect(results.every((result) => result.categoryId === "macos")).toBe(true);
++    });
++
++    it.each(["GTK", "Linux"])("does not return a hidden %s panel", (query) => {
++        setQuery(query);
++
++        expect(getResults().every((result) => !["gtk", "linux"].includes(result.categoryId))).toBe(
++            true
++        );
++    });
++});
