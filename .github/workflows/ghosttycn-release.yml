@@ -9,7 +9,7 @@ on:
       tag:
         description: "Release tag (vX.Y.Z-cn.N)"
         required: true
-        default: "v0.4.0-cn.2"
+        default: "v0.5.0-cn.1"
       publish:
         description: "Create the GitHub Release and deploy the appcast"
         required: true
@@ -37,7 +37,7 @@ jobs:
       SPARKLE_VERSION: 2.9.0
       SPARKLE_PUBLIC_KEY: LJbK9TVh5MmcbDO0iNT9P6b6dfaka+x5lr0nDCC1OZQ=
       GHOSTTYCN_SPARKLE_PRIVATE_KEY: ${{ secrets.GHOSTTYCN_SPARKLE_PRIVATE_KEY }}
-      GHOSTTY_UPSTREAM_COMMIT: 4c6215bb8ee186b5c829457a9a9a9c936f2337bf
+      GHOSTTY_UPSTREAM_COMMIT: 99d7b5fd508eededf2de08ca641f2d83027631f8
       GHOSTTY_CONFIG_COMMIT: d9cd47256b024380baffba06b72f384534d882a6
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -182,6 +182,7 @@ jobs:
           )
 
           notes="release/${ARCHIVE%.zip}.md"
+          curated_notes=".github/release-notes/${{ steps.version.outputs.tag }}.md"
           {
             echo "# GhosttyCN ${{ steps.version.outputs.version }}"
             echo
@@ -192,7 +193,13 @@ jobs:
             echo
             echo "> v0.3.0-cn.1 是新应用身份下首个支持自动更新的版本；v0.2.x 用户需要手动安装本版本一次。"
             echo
+            if [[ -f "${curated_notes}" ]]; then
+              cat "${curated_notes}"
+              echo
+            fi
             if [[ "${{ steps.version.outputs.publish }}" == "true" ]]; then
+              echo "## 完整提交记录"
+              echo
               gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
                 -f tag_name="${{ steps.version.outputs.tag }}" \
                 --jq .body
