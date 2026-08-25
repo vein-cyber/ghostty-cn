@@ -556,7 +556,7 @@
 				EXECUTABLE_NAME = ghostty;
 				GCC_OPTIMIZATION_LEVEL = fast;
 				GENERATE_INFOPLIST_FILE = YES;
-				GHOSTTYCN_VERSION = "0.4.0-dev";
+				GHOSTTYCN_VERSION = "0.6.0-dev";
 				GHOSTTY_COMMIT = "";
 				INFOPLIST_FILE = "Ghostty-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = GhosttyCN;
@@ -584,7 +584,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = "0.4.0-dev";
+				MARKETING_VERSION = "0.6.0-dev";
 				"OTHER_LDFLAGS[arch=*]" = "-lstdc++";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.vein-cyber.ghostty-cn";
 				PRODUCT_MODULE_NAME = Ghostty;
@@ -957,7 +957,7 @@
 				ENABLE_PREVIEWS = YES;
 				EXECUTABLE_NAME = ghostty;
 				GENERATE_INFOPLIST_FILE = YES;
-				GHOSTTYCN_VERSION = "0.4.0-dev";
+				GHOSTTYCN_VERSION = "0.6.0-dev";
 				GHOSTTY_COMMIT = "";
 				INFOPLIST_FILE = "Ghostty-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "GhosttyCN[DEBUG]";
@@ -984,7 +984,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = "0.4.0-dev";
+				MARKETING_VERSION = "0.6.0-dev";
 				"OTHER_LDFLAGS[arch=*]" = "-lstdc++";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.vein-cyber.ghostty-cn.debug";
 				PRODUCT_MODULE_NAME = Ghostty;
@@ -1015,7 +1015,7 @@
 				EXECUTABLE_NAME = ghostty;
 				GCC_OPTIMIZATION_LEVEL = fast;
 				GENERATE_INFOPLIST_FILE = YES;
-				GHOSTTYCN_VERSION = "0.4.0-dev";
+				GHOSTTYCN_VERSION = "0.6.0-dev";
 				GHOSTTY_COMMIT = "";
 				INFOPLIST_FILE = "Ghostty-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = GhosttyCN;
@@ -1042,7 +1042,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = "0.4.0-dev";
+				MARKETING_VERSION = "0.6.0-dev";
 				"OTHER_LDFLAGS[arch=*]" = "-lstdc++";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.vein-cyber.ghostty-cn";
 				PRODUCT_MODULE_NAME = Ghostty;

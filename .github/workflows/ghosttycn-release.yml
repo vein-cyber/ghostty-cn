@@ -9,7 +9,7 @@ on:
       tag:
         description: "Release tag (vX.Y.Z-cn.N)"
         required: true
-        default: "v0.5.0-cn.1"
+        default: "v0.6.0-cn.1"
       publish:
         description: "Create the GitHub Release and deploy the appcast"
         required: true
@@ -37,8 +37,8 @@ jobs:
       SPARKLE_VERSION: 2.9.0
       SPARKLE_PUBLIC_KEY: LJbK9TVh5MmcbDO0iNT9P6b6dfaka+x5lr0nDCC1OZQ=
       GHOSTTYCN_SPARKLE_PRIVATE_KEY: ${{ secrets.GHOSTTYCN_SPARKLE_PRIVATE_KEY }}
-      GHOSTTY_UPSTREAM_COMMIT: 99d7b5fd508eededf2de08ca641f2d83027631f8
-      GHOSTTY_CONFIG_COMMIT: d9cd47256b024380baffba06b72f384534d882a6
+      GHOSTTY_UPSTREAM_COMMIT: 8867c37c55b578b9eb4cfaba41cb9023e557176d
+      GHOSTTY_CONFIG_COMMIT: bd9ec114fe01c29be7a2ef115f5e71bd43253a3e
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout source

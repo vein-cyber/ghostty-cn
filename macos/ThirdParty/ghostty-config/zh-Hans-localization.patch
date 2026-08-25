@@ -4179,6 +4179,66 @@ index 0000000..940e770
 +    });
 +});
 diff --git a/src/lib/i18n.ts b/src/lib/i18n.ts
+index c23d991..7f5dfc3 100644
+--- a/src/lib/i18n.ts
++++ b/src/lib/i18n.ts
+@@ -43,6 +43,7 @@ const zhHansLabels: Record<string, string> = {
+     "Cell width": "单元格宽度",
+     "Clear selection on copy": "复制后清除选择",
+     "Clear selection on typing": "输入时清除选择",
++    "Clipboard write limit (bytes)": "剪贴板写入上限（字节）",
+     "Color Palette": "调色板",
+     "Color theme": "配色主题",
+     "Colors": "颜色",
+@@ -477,6 +478,9 @@ const zhHansLabels: Record<string, string> = {
+         "自定义样式必须同时指定 Ghost 和屏幕颜色。",
+     "Tabs currently do not work with non-native fullscreen windows":
+         "标签页目前不支持非原生全屏窗口。",
++    "The maximum size in bytes of a single Kitty clipboard protocol write. Data beyond the limit is rejected and the clipboard is left unchanged. The default is 64 MiB. Set to `unlimited` to remove the limit, or `0` to reject non-empty writes.":
++        "单次 Kitty 剪贴板协议写入允许的最大字节数。超出限制时将拒绝整个写入，剪贴板内容保持不变。默认值为 64 MiB；设为 `unlimited` 可取消限制，设为 `0` 可拒绝所有非空写入。",
++    "Unlimited": "无限制",
+     "Controls whether macOS system shortcuts (e.g. Cmd+Space) can be captured.":
+         "控制是否允许捕获 macOS 系统快捷键（例如 Cmd+Space）。",
+     "Allows terminal applications to receive mouse events.": "允许终端应用接收鼠标事件。",
+diff --git a/src/lib/settings/navigation.ts b/src/lib/settings/navigation.ts
+index 71c3726..9a167c5 100644
+--- a/src/lib/settings/navigation.ts
++++ b/src/lib/settings/navigation.ts
+@@ -152,6 +152,7 @@ export const navigation = [
+                 settings: [
+                     "clipboardRead",
+                     "clipboardWrite",
++                    "clipboardWriteLimitBytes",
+                     "copyOnSelect",
+                     "clipboardTrimTrailingSpaces",
+                     "clipboardPasteProtection",
+diff --git a/src/lib/settings/registry.ts b/src/lib/settings/registry.ts
+index 2734338..81b8de7 100644
+--- a/src/lib/settings/registry.ts
++++ b/src/lib/settings/registry.ts
+@@ -309,6 +309,21 @@ export const registry = {
+         name: "Allow terminal to write clipboard",
+         widget: {type: "pill", options: [{value: "ask", label: "Ask"}, {value: "allow", label: "Allow"}, {value: "deny", label: "Deny"}]}
+     },
++    clipboardWriteLimitBytes: {
++        default: "67108864",
++        description: "The maximum size in bytes of a single Kitty clipboard protocol write. Data beyond the limit is rejected and the clipboard is left unchanged. The default is 64 MiB. Set to `unlimited` to remove the limit, or `0` to reject non-empty writes.",
++        key: "clipboard-write-limit-bytes",
++        name: "Clipboard write limit (bytes)",
++        since: "1.4.0",
++        widget: {
++            type: "custom-number",
++            presets: [{value: "unlimited", label: "Unlimited"}],
++            min: 0,
++            step: 1,
++            size: 12,
++            integer: true
++        }
++    },
+     command: {
+         default: "",
+         description: "The command to run, usually a shell. If not an absolute path, looked up in PATH. If not set, the shell is determined from SHELL env var or passwd entry.\n\nPrefix with `direct:` to avoid shell expansion. Prefix with `shell:` to always wrap in a shell. Additional arguments are supported.\n\nUsed for all new terminal surfaces.",
+diff --git a/src/lib/i18n.ts b/src/lib/i18n.ts
 index a99e6e2..c23d991 100644
 --- a/src/lib/i18n.ts
 +++ b/src/lib/i18n.ts
