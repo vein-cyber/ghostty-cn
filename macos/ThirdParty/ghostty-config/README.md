@@ -21,11 +21,16 @@ renames the macOS panel to `Advanced` (`高级`), and redirects the legacy platf
 routes while keeping their configuration keys available for raw editing and
 round-trip serialization. English remains the source and fallback language.
 
+`help-localization.patch` provides stable, setting-ID-based simplified-Chinese
+help for every setting exposed by the GhosttyCN navigation. It also localizes
+the shared alert and confirmation controls and adds a coverage test so newly
+visible settings cannot be added without corresponding Chinese help.
+
 ## Rebuilding the bundled resources
 
 1. Check out the upstream commit shown above.
-2. Apply `native-integration.patch`, followed by
-   `zh-Hans-localization.patch`, from the upstream repository root.
+2. Apply `native-integration.patch`, `zh-Hans-localization.patch`, and then
+   `help-localization.patch`, from the upstream repository root.
 3. Run `bun install --frozen-lockfile`, followed by `bun run check`,
    `bun run lint`, `bun run test`, and `bun run build`.
 4. Replace `macos/Resources/ghostty-config` with the generated `build`
