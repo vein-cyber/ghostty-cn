@@ -1,6 +1,39 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%@ is attempting to read from the clipboard.\nThe current clipboard contents are shown below.": {
+      "comment": "Clipboard read permission prompt; the placeholder is the requesting program",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 正在尝试读取剪贴板。\n当前剪贴板内容如下。"
+          }
+        }
+      }
+    },
+    "%@ is attempting to write to the clipboard.\nThe content to write is shown below.": {
+      "comment": "Clipboard write permission prompt; the placeholder is the requesting program",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 正在尝试写入剪贴板。\n将要写入的内容如下。"
+          }
+        }
+      }
+    },
+    "An application": {
+      "comment": "Fallback name for a program requesting clipboard access",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "某个应用"
+          }
+        }
+      }
+    },
     "Configuration saved and reloaded.": {
       "localizations": {
         "zh-Hans": {
@@ -2741,6 +2774,17 @@
         }
       }
     },
+    "Pasting this text to the terminal may be dangerous as it looks like some commands may be executed.": {
+      "comment": "Warning shown before pasting potentially unsafe terminal text",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将此文本粘贴到终端可能存在风险，因为其中的部分命令可能会被执行。"
+          }
+        }
+      }
+    },
     "Paste": {
       "comment": "Button that confirms a potentially unsafe paste",
       "localizations": {
@@ -3001,6 +3045,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "重新加载配置"
+          }
+        }
+      }
+    },
+    "Remember this choice for the session": {
+      "comment": "Remember a clipboard access decision for the current terminal session",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在当前会话中记住此选择"
           }
         }
       }
