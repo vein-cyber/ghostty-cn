@@ -9,7 +9,7 @@ on:
       tag:
         description: "Release tag (vX.Y.Z-cn.N)"
         required: true
-        default: "v0.6.0-cn.1"
+        default: "v0.6.0-cn.2"
       publish:
         description: "Create the GitHub Release and deploy the appcast"
         required: true
