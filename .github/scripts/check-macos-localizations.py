@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 CATALOG_ROOT = ROOT / "macos" / "Sources"
 UNCHANGED_VALUES = {"%@", "%lld%%", "-/%llu", "Ghostty", "GhosttyCN", "GitHub", "PID", "TTY"}
 XIB_TABLES = (
-    "App/macOS/MainMenu",
+    "App/MainMenu",
     "Features/About/About",
     "Features/ClipboardConfirmation/ClipboardConfirmation",
     "Features/QuickTerminal/QuickTerminal",

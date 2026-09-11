@@ -4566,6 +4566,16 @@
         }
       }
     },
+    "You have %lld windows with running processes. Do you want to review these windows before closing?": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "有 %lld 个窗口仍有进程在运行。关闭前要查看这些窗口吗？"
+          }
+        }
+      }
+    },
     "You have %lld windows with running processes. Do you want to review these windows before quitting?": {
       "localizations": {
         "zh-Hans": {

@@ -2370,7 +2370,7 @@ index 2840953..a852efa 100644
      "Cursor blink style": "光标闪烁方式",
      "Cursor color": "光标颜色",
      "Cursor height": "光标高度",
-@@ -225,7 +223,341 @@ const zhHansLabels: Record<string, string> = {
+@@ -225,7 +223,345 @@ const zhHansLabels: Record<string, string> = {
      "Window title font": "窗口标题字体",
      "Word selection characters": "单词选择边界字符",
      "macOS shortcuts": "macOS 快捷键",
@@ -2426,6 +2426,8 @@ index 2840953..a852efa 100644
 +    "Auto": "自动",
 +    "Detect": "自动检测",
 +    "None": "无",
++    "Primary": "选择剪贴板",
++    "Both": "两个剪贴板",
 +    "Current": "当前",
 +    "Visible": "显示",
 +    "Hidden": "隐藏",
@@ -2448,6 +2450,8 @@ index 2840953..a852efa 100644
 +    "Remain": "保留",
 +    "Notification": "通知",
 +    "Clipboard": "剪贴板",
++    "Selection Clipboard": "选择剪贴板",
++    "System Clipboard": "系统剪贴板",
 +    "System": "系统",
 +    "Audio": "音频",
 +    "Attention": "提醒",
@@ -2713,7 +2717,7 @@ index 2840953..a852efa 100644
  };
  
  export function isChinese(): boolean {
-@@ -238,6 +570,8 @@ export function localizeLabel(value: string): string {
+@@ -238,6 +574,8 @@ export function localizeLabel(value: string): string {
      return isChinese() ? zhHansLabels[value] || value : value;
  }
  
@@ -4422,3 +4426,33 @@ index 0000000..c3b9e77
 +        );
 +    });
 +});
+diff --git a/src/lib/settings/registry.ts b/src/lib/settings/registry.ts
+--- a/src/lib/settings/registry.ts
++++ b/src/lib/settings/registry.ts
+@@ -355,10 +355,10 @@ export const registry = {
+     },
+     copyOnSelect: {
+-        default: "true",
+-        description: "Whether to automatically copy selected text to the clipboard.\n\n- `true` - Copy to the selection clipboard (default on Linux and macOS)\n- `false` - Disable copy on select\n- `clipboard` - Copy to both the selection clipboard and system clipboard\n\nMiddle-click paste always uses the selection clipboard.",
++        default: "none",
++        description: "Whether to automatically copy selected text to the clipboard.\n\n- `none` - Do not copy selected text automatically (default on macOS)\n- `primary` - Copy to the selection clipboard only; this has no effect on macOS\n- `clipboard` - Copy to the system clipboard only\n- `both` - Copy to both clipboards on Linux and only the system clipboard on macOS\n\nFor compatibility, `true` maps to `primary` on Linux and `clipboard` on macOS; `false` maps to `none`.",
+         key: "copy-on-select",
+         name: "Copy on select",
+-        widget: {type: "pill", options: [{value: "true", label: "On"}, {value: "false", label: "Off"}, {value: "clipboard", label: "Clipboard"}]}
++        widget: {type: "pill", options: [{value: "none", label: "None"}, {value: "primary", label: "Primary"}, {value: "clipboard", label: "Clipboard"}, {value: "both", label: "Both"}]}
+     },
+     cursorClickToMove: {
+         default: "true",
+@@ -982,10 +982,10 @@ export const registry = {
+     },
+     middleClickAction: {
+         default: "primary-paste",
+-        description: "The action to take when the user middle-clicks on the terminal surface.\n\n- `primary-paste` - Paste from the selection (or system) clipboard per `copy-on-select` (default)\n- `ignore` - Do nothing, ignore the middle click",
++        description: "The action to take when the user middle-clicks on the terminal surface.\n\n- `primary-paste` - Paste from the selection clipboard on Linux; this does nothing on macOS (default)\n- `clipboard-paste` - Paste from the system clipboard\n- `ignore` - Do nothing, ignore the middle click",
+         key: "middle-click-action",
+         name: "Middle-click action",
+-        widget: {type: "dropdown", options: ["primary-paste", "ignore"]}
++        widget: {type: "dropdown", options: [{name: "Selection Clipboard", value: "primary-paste"}, {name: "System Clipboard", value: "clipboard-paste"}, {name: "Ignore", value: "ignore"}]}
+     },
+     minimumContrast: {
+         default: "1",

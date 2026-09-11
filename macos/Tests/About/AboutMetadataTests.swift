@@ -26,14 +26,14 @@ struct AboutMetadataTests {
     @Test func developmentMetadataDoesNotLinkToARelease() {
         let metadata = AboutMetadata(
             infoDictionary: [
-                "GhosttyCNVersion": "0.6.0-dev",
+                "GhosttyCNVersion": "0.7.0-dev",
                 "CFBundleVersion": "1",
                 "GhosttyCommit": "",
             ],
             upstreamVersion: "1.3.2-dev"
         )
 
-        #expect(metadata.productVersion == "0.6.0-dev")
+        #expect(metadata.productVersion == "0.7.0-dev")
         #expect(metadata.versionURL == nil)
         #expect(metadata.commit == nil)
         #expect(metadata.commitURL == nil)
@@ -42,7 +42,7 @@ struct AboutMetadataTests {
     @Test func missingProductVersionUsesDeveloperFallback() {
         let metadata = AboutMetadata(infoDictionary: [:], upstreamVersion: "1.3.2-dev")
 
-        #expect(metadata.productVersion == "0.6.0-dev")
+        #expect(metadata.productVersion == "0.7.0-dev")
         #expect(metadata.build == nil)
     }
 }

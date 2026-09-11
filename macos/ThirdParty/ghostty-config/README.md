@@ -2,7 +2,7 @@
 
 The bundled visual settings interface is built from
 [`zerebos/ghostty-config`](https://github.com/zerebos/ghostty-config) at commit
-`bd9ec114fe01c29be7a2ef115f5e71bd43253a3e` (2026-08-22).
+`0f51dceafa3e74cd7a24fecc471fd2354f6a0ea6` (2026-08-29).
 
 Ghostty Config is licensed under Apache-2.0. The unmodified upstream license is
 stored in this directory and in the bundled web resources.
