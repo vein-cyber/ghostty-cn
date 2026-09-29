@@ -1,0 +1,55 @@
+diff --git a/src/lib/help-i18n.ts b/src/lib/help-i18n.ts
+index 83becf7..9a8d7e1 100644
+--- a/src/lib/help-i18n.ts
++++ b/src/lib/help-i18n.ts
+@@ -48,6 +48,7 @@ export const zhHansSettingDescriptions: Record<string, string> = {
+     oscColorReportFormat: "设置 OSC 4、10、11 颜色查询的回复格式：不回复、8 位分量或 16 位分量。",
+     enquiryResponse: "设置收到 ENQ（0x05）控制字符时发送给终端程序的字符串，默认为空。",
+     vtKamAllowed: "允许终端程序使用 ANSI KAM 模式禁用键盘输入。此模式很少使用，通常不建议开启。",
++    vtWindowResizeAllowed: "允许终端程序通过 CSI 8 t 请求调整窗口大小，远程程序也可以发出请求。默认关闭；分屏、多标签页、快速终端及全屏时会忽略请求，尺寸限制在屏幕范围内且至少为 40 列 × 10 行。",
+     clipboardRead: "控制终端程序通过 OSC 52 读取系统剪贴板：每次询问、始终允许或始终拒绝。",
+     clipboardWrite: "控制终端程序通过 OSC 52 写入系统剪贴板：每次询问、始终允许或始终拒绝。",
+     clipboardWriteLimitBytes: "限制单次 Kitty 剪贴板协议写入的字节数，默认 64 MiB。超出限制会拒绝整次写入；`unlimited` 表示无限制，`0` 表示拒绝非空写入。",
+diff --git a/src/lib/i18n.ts b/src/lib/i18n.ts
+index ea54c03..3107ed7 100644
+--- a/src/lib/i18n.ts
++++ b/src/lib/i18n.ts
+@@ -5,6 +5,7 @@ const zhHansLabels: Record<string, string> = {
+     "Additional config file": "附加配置文件",
+     "Allow desktop notifications": "允许桌面通知",
+     "Allow mouse reporting": "允许鼠标事件报告",
++    "Allow programs to resize the window": "允许程序调整窗口大小",
+     "Allow shift with mouse click": "允许 Shift 配合鼠标点击",
+     "Allow shaders to animate": "允许着色器动画",
+     "Allow terminal to read clipboard": "允许终端读取剪贴板",
+diff --git a/src/lib/settings/navigation.ts b/src/lib/settings/navigation.ts
+index 9a167c5..c31db61 100644
+--- a/src/lib/settings/navigation.ts
++++ b/src/lib/settings/navigation.ts
+@@ -137,7 +137,7 @@ export const navigation = [
+                 id: "compatibility",
+                 name: "Protocol & Compatibility",
+                 note: "These settings control low-level terminal protocol behavior. Only change these if you know what you're doing.",
+-                settings: ["oscColorReportFormat", "enquiryResponse", "vtKamAllowed"]
++                settings: ["oscColorReportFormat", "enquiryResponse", "vtKamAllowed", "vtWindowResizeAllowed"]
+             }
+         ]
+     },
+diff --git a/src/lib/settings/registry.ts b/src/lib/settings/registry.ts
+index 7eda14b..493803d 100644
+--- a/src/lib/settings/registry.ts
++++ b/src/lib/settings/registry.ts
+@@ -1393,6 +1393,13 @@ export const registry = {
+         note: "If you don't know what this is, don't touch it!",
+         widget: {type: "switch"}
+     },
++    vtWindowResizeAllowed: {
++        default: "false",
++        description: "Allow a program to resize its window with CSI 8 t. Programs running remotely can also request this. Requests are ignored in splits, multi-tab windows, the quick terminal, and fullscreen. Sizes are limited to the screen and at least 40 columns by 10 rows.",
++        key: "vt-window-resize-allowed",
++        name: "Allow programs to resize the window",
++        widget: {type: "switch"}
++    },
+     waitAfterCommand: {
+         default: "false",
+         description: "If true, keep the terminal open after the command exits until any keypress is received. Primarily useful for scripts or debugging.",

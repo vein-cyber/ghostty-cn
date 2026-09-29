@@ -2,7 +2,7 @@
 
 The bundled visual settings interface is built from
 [`zerebos/ghostty-config`](https://github.com/zerebos/ghostty-config) at commit
-`0f51dceafa3e74cd7a24fecc471fd2354f6a0ea6` (2026-08-29).
+`343c30f56c8e685377395638ce3f60da5be9e735` (2026-09-22).
 
 Ghostty Config is licensed under Apache-2.0. The unmodified upstream license is
 stored in this directory and in the bundled web resources.
@@ -26,11 +26,16 @@ help for every setting exposed by the GhosttyCN navigation. It also localizes
 the shared alert and confirmation controls and adds a coverage test so newly
 visible settings cannot be added without corresponding Chinese help.
 
+`vt-window-resize.patch` adds Ghostty's new `vt-window-resize-allowed` setting
+to the visual editor, with a Chinese label and help text. It remains disabled
+by default, matching Ghostty's core configuration.
+
 ## Rebuilding the bundled resources
 
 1. Check out the upstream commit shown above.
-2. Apply `native-integration.patch`, `zh-Hans-localization.patch`, and then
-   `help-localization.patch`, from the upstream repository root.
+2. Apply `native-integration.patch`, `zh-Hans-localization.patch`,
+   `help-localization.patch`, and then `vt-window-resize.patch`, from the
+   upstream repository root.
 3. Run `bun install --frozen-lockfile`, followed by `bun run check`,
    `bun run lint`, `bun run test`, and `bun run build`.
 4. Replace `macos/Resources/ghostty-config` with the generated `build`
