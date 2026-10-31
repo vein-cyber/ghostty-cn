@@ -148,6 +148,22 @@ jobs:
             GHOSTTY_COMMIT="${GITHUB_SHA}" \
             build
 
+      - name: Verify embedded settings startup
+        run: |
+          mkdir -p .action
+          xcodebuild \
+            -project macos/Ghostty.xcodeproj \
+            -scheme Ghostty \
+            -configuration Debug \
+            "SYMROOT=${GITHUB_WORKSPACE}/macos/build" \
+            -skip-testing:GhosttyUITests \
+            -only-testing:GhosttyTests/GhosttyConfigWebViewTests \
+            -resultBundlePath .action/settings-startup.xcresult \
+            test
+          xcrun xcresulttool get test-results summary \
+            --path .action/settings-startup.xcresult --format json > .action/settings-startup.json
+          python3 -c 'import json; r=json.load(open(".action/settings-startup.json")); assert r["result"] == "Passed" and r["passedTests"] > 0, r'
+
       - name: Verify application bundle
         env:
           APP: macos/build/ReleaseLocal/GhosttyCN.app
@@ -172,7 +188,7 @@ jobs:
           file "${APP}/Contents/MacOS/ghostty" | grep -q arm64
           file "${APP}/Contents/MacOS/ghostty" | grep -q x86_64
           "${APP}/Contents/MacOS/ghostty" +version | grep -Eq 'build mode[[:space:]]*:[[:space:]]*\.fast$'
-          ! nm "${APP}/Contents/MacOS/ghostty" | grep -q '__llvm_profile'
+          ! nm "${APP}/Contents/MacOS/ghostty" | grep '__llvm_profile'
 
       - name: Package application
         id: package
