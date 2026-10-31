@@ -19,6 +19,14 @@ def main [
         []
     }
 
+    # The shared test plan enables coverage. Keep its instrumentation out of
+    # ordinary builds, especially ReleaseLocal applications.
+    let coverage_flags = if $action == "test" {
+        []
+    } else {
+        ["ENABLE_CODE_COVERAGE=NO"]
+    }
+
     (^env -i
         $"HOME=($env.HOME)"
         "PATH=/usr/bin:/bin:/usr/sbin:/sbin"
@@ -28,5 +36,6 @@ def main [
         -configuration $configuration
         $"SYMROOT=($build_dir)"
         ...$skip_testing
+        ...$coverage_flags
         $action)
 }

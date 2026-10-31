@@ -9,7 +9,7 @@ on:
       tag:
         description: "Release tag (vX.Y.Z-cn.N)"
         required: true
-        default: "v0.8.0-cn.1"
+        default: "v0.9.0-cn.1"
       publish:
         description: "Create the GitHub Release and deploy the appcast"
         required: true
@@ -37,8 +37,8 @@ jobs:
       SPARKLE_VERSION: 2.9.6
       SPARKLE_PUBLIC_KEY: LJbK9TVh5MmcbDO0iNT9P6b6dfaka+x5lr0nDCC1OZQ=
       GHOSTTYCN_SPARKLE_PRIVATE_KEY: ${{ secrets.GHOSTTYCN_SPARKLE_PRIVATE_KEY }}
-      GHOSTTY_UPSTREAM_COMMIT: 12752b2ac1bb05ce53402ed8c853ed1f96eef0b1
-      GHOSTTY_CONFIG_COMMIT: 343c30f56c8e685377395638ce3f60da5be9e735
+      GHOSTTY_UPSTREAM_COMMIT: 9bfa8ee9a1d73f99208c1f056c4e4b5783402ead
+      GHOSTTY_CONFIG_COMMIT: f2eac4de31a8b4eb924850c5f96f4a113c940773
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout source
@@ -99,7 +99,7 @@ jobs:
       - name: Install Zig
         uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
         with:
-          version: 0.16.0
+          version: 0.17.0
 
       - name: Verify Xcode
         run: |
@@ -110,6 +110,13 @@ jobs:
             echo "GhosttyCN requires Xcode 26.5 or newer" >&2
             exit 1
           fi
+
+      - name: Ensure Metal compiler
+        run: |
+          if ! xcrun metal --version; then
+            xcodebuild -downloadComponent MetalToolchain
+          fi
+          xcrun metal --version
 
       - name: Download Sparkle publishing tools
         run: |
@@ -123,7 +130,7 @@ jobs:
       - name: Build release GhosttyKit
         run: |
           zig build \
-            -Doptimize=ReleaseFast \
+            -Doptimize=fast \
             -Demit-macos-app=false \
             -Dversion-string="${{ steps.version.outputs.upstream_version }}"
 
@@ -164,7 +171,7 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "${APP}"
           file "${APP}/Contents/MacOS/ghostty" | grep -q arm64
           file "${APP}/Contents/MacOS/ghostty" | grep -q x86_64
-          "${APP}/Contents/MacOS/ghostty" +version | grep -q ReleaseFast
+          "${APP}/Contents/MacOS/ghostty" +version | grep -Eq 'build mode[[:space:]]*:[[:space:]]*\.fast$'
           ! nm "${APP}/Contents/MacOS/ghostty" | grep -q '__llvm_profile'
 
       - name: Package application

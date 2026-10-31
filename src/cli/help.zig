@@ -55,7 +55,7 @@ pub fn run(alloc: Allocator) !u8 {
         \\
         \\On macOS, launching the terminal emulator from the CLI is not
         \\supported and only actions are supported. Use `open -na GhosttyCN.app`
-        \\instead, or `open -na ghostty.app --args --foo=bar --baz=quz` to pass
+        \\instead, or `open -na GhosttyCN.app --args --foo=bar --baz=quz` to pass
         \\arguments.
         \\
         \\Available actions:
@@ -63,8 +63,8 @@ pub fn run(alloc: Allocator) !u8 {
         \\
     );
 
-    inline for (@typeInfo(Action).@"enum".fields) |field| {
-        try stdout.print("  +{s}\n", .{field.name});
+    inline for (@typeInfo(Action).@"enum".field_names) |field| {
+        try stdout.print("  +{s}\n", .{field});
     }
 
     try stdout.writeAll(

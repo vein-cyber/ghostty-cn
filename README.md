@@ -80,15 +80,19 @@ GhosttyCN 专属 Sparkle EdDSA 密钥验证。`stable` 和 `tip` 配置在 Ghost
 
 ### 本地构建
 
-构建经过优化、同时支持 Apple Silicon 与 Intel 的本地 Release 版本：
+使用 Zig 0.17.0 构建经过优化、同时支持 Apple Silicon 与 Intel 的本地 Release 版本：
 
 ```shell
-zig build -Doptimize=ReleaseFast
+zig build -Doptimize=fast -Demit-macos-app=false
+macos/build.nu --configuration ReleaseLocal
 open macos/build/ReleaseLocal/GhosttyCN.app
 ```
 
 产物位于 `macos/build/ReleaseLocal/GhosttyCN.app`。`ReleaseLocal` 使用本机临时
 签名；本仓库公开的版本同样不使用 Apple Developer 证书或 Apple 公证。
+
+如果 Xcode 提示缺少 Metal 编译组件，先运行
+`xcodebuild -downloadComponent MetalToolchain`，再重新构建。
 
 > [!IMPORTANT]
 >

@@ -1,35 +1,54 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "%@ is attempting to read from the clipboard.\nThe current clipboard contents are shown below.": {
-      "comment": "Clipboard read permission prompt; the placeholder is the requesting program",
+    "An application is attempting to read from the clipboard.\nThe current clipboard contents are shown below.": {
+      "comment": "Clipboard read permission prompt; never display an untrusted program name",
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ 正在尝试读取剪贴板。\n当前剪贴板内容如下。"
+            "value": "某个应用正在尝试读取剪贴板。\n当前剪贴板内容如下。"
           }
         }
       }
     },
-    "%@ is attempting to write to the clipboard.\nThe content to write is shown below.": {
-      "comment": "Clipboard write permission prompt; the placeholder is the requesting program",
+    "An application is attempting to write to the clipboard.\nThe content to write is shown below.": {
+      "comment": "Clipboard write permission prompt; never display an untrusted program name",
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ 正在尝试写入剪贴板。\n将要写入的内容如下。"
+            "value": "某个应用正在尝试写入剪贴板。\n将要写入的内容如下。"
           }
         }
       }
     },
-    "An application": {
-      "comment": "Fallback name for a program requesting clipboard access",
+    "Cannot Execute File": {
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "某个应用"
+            "value": "无法执行文件"
+          }
+        }
+      }
+    },
+    "Close Split": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "关闭分屏"
+          }
+        }
+      }
+    },
+    "This file's path contains hidden control characters, which could make GhosttyCN run a different command than the one shown.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此文件的路径包含不可见的控制字符，可能导致 GhosttyCN 执行与所显示内容不同的命令。"
           }
         }
       }

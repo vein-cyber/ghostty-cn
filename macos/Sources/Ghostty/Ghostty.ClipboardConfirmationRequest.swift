@@ -23,12 +23,10 @@ extension Ghostty {
         case kitty_write
 
         /// The text to show in the clipboard confirmation prompt for this
-        /// request. The name is the requesting program's human friendly
-        /// name, when the protocol carries one.
-        func text(name: String? = nil) -> String {
-            let program = name.map { "\"\($0)\"" } ?? String(
-                localized: "An application",
-                comment: "Fallback name for a program requesting clipboard access")
+        /// request. The Kitty clipboard protocol's human friendly name is
+        /// deliberately not shown: it is attacker-controlled and would
+        /// let a program put arbitrary text in this trusted prompt.
+        func text() -> String {
             switch self {
             case .paste:
                 return String(
@@ -37,17 +35,17 @@ extension Ghostty {
             case .osc_52_read, .kitty_read:
                 return String(
                     localized: """
-                    \(program) is attempting to read from the clipboard.
+                    An application is attempting to read from the clipboard.
                     The current clipboard contents are shown below.
                     """,
-                    comment: "Clipboard read permission prompt; the placeholder is the requesting program")
+                    comment: "Clipboard read permission prompt; never display an untrusted program name")
             case .osc_52_write, .kitty_write:
                 return String(
                     localized: """
-                    \(program) is attempting to write to the clipboard.
+                    An application is attempting to write to the clipboard.
                     The content to write is shown below.
                     """,
-                    comment: "Clipboard write permission prompt; the placeholder is the requesting program")
+                    comment: "Clipboard write permission prompt; never display an untrusted program name")
             }
         }
 
@@ -86,10 +84,6 @@ extension Ghostty {
 
         let kind: ClipboardRequest
 
-        /// The human friendly name of the requesting program to show in
-        /// the prompt, when the protocol carries one.
-        let programName: String?
-
         /// True when the user's decision may be remembered as a session
         /// grant, showing a remember option in the prompt.
         let canRemember: Bool
@@ -107,7 +101,6 @@ extension Ghostty {
             surface: SurfaceView,
             contents: String,
             kind: ClipboardRequest,
-            programName: String? = nil,
             canRemember: Bool = false,
             previewImage: NSImage? = nil,
             completion: @escaping (SurfaceView, Bool, Bool) -> Void
@@ -115,7 +108,6 @@ extension Ghostty {
             self.surface = surface
             self.contents = contents
             self.kind = kind
-            self.programName = programName
             self.canRemember = canRemember
             self.previewImage = previewImage
             self.completion = completion

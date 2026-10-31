@@ -14,7 +14,7 @@ struct AboutMetadata {
     ) {
         self.productVersion = Self.nonEmptyString(infoDictionary["GhosttyCNVersion"])
             ?? Self.nonEmptyString(infoDictionary["CFBundleShortVersionString"])
-            ?? "0.8.0-dev"
+            ?? "0.9.0-dev"
         self.upstreamVersion = upstreamVersion
         self.build = Self.nonEmptyString(infoDictionary["CFBundleVersion"])
         self.commit = Self.nonEmptyString(infoDictionary["GhosttyCommit"])
