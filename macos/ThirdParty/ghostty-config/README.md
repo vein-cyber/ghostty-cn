@@ -14,6 +14,12 @@ loads the current Ghostty configuration and sends generated settings to the
 macOS host for validated saving. Configuration includes and this fork's update
 settings are excluded from visual management.
 
+The native integration also sets an explicit SvelteKit build version (optionally
+overridden by `GHOSTTYCN_CONFIG_VERSION`). Client scripts and prerendered HTML
+must use the same bootstrap identifier; independently generated timestamp defaults
+can leave the embedded page blank. The macOS WebKit integration test loads the
+real bundled settings route and verifies the native ready message and Chinese UI.
+
 `zh-Hans-localization.patch` extends the integration with simplified-Chinese
 navigation, setting names, inline guidance, controls, built-in tools, and
 dialogs. It also removes the GTK and Linux panels from GhosttyCN's navigation,

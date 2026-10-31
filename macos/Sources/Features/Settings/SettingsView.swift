@@ -251,7 +251,7 @@ final class SettingsController: NSWindowController,
 }
 
 /// Serves the generated Svelte site from the application bundle without network access.
-private final class GhosttyConfigSchemeHandler: NSObject, WKURLSchemeHandler {
+final class GhosttyConfigSchemeHandler: NSObject, WKURLSchemeHandler {
     private let root: URL?
 
     init(root: URL?) {

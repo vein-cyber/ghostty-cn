@@ -1,3 +1,17 @@
+diff --git a/svelte.config.js b/svelte.config.js
+--- a/svelte.config.js
++++ b/svelte.config.js
+@@ -11,6 +11,10 @@ const config = {
+         runes: true
+     },
+     kit: {
++        version: {
++            // Client and prerender builds must share one bootstrap identifier.
++            name: process.env.GHOSTTYCN_CONFIG_VERSION ?? "ghosttycn-native"
++        },
+         // adapter-auto only supports some environments, see https://kit.svelte.dev/docs/adapter-auto for a list.
+         // If your environment is not supported, or you settled on a specific environment, switch out the adapter.
+         // See https://kit.svelte.dev/docs/adapters for more information about adapters.
 diff --git a/src/lib/components/NativeToolbar.svelte b/src/lib/components/NativeToolbar.svelte
 new file mode 100644
 index 0000000..89f88c6
