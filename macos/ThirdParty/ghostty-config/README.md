@@ -2,7 +2,7 @@
 
 The bundled visual settings interface is built from
 [`zerebos/ghostty-config`](https://github.com/zerebos/ghostty-config) at commit
-`f2eac4de31a8b4eb924850c5f96f4a113c940773` (2026-10-09).
+`c25fe4c627c056fb25f3f33ac638aef621a2a6d7` (2026-11-20).
 
 Ghostty Config is licensed under Apache-2.0. The unmodified upstream license is
 stored in this directory and in the bundled web resources.
@@ -36,12 +36,17 @@ visible settings cannot be added without corresponding Chinese help.
 to the visual editor, with a Chinese label and help text. It remains disabled
 by default, matching Ghostty's core configuration.
 
+`macos-copy-on-select.patch` follows the current macOS core default of
+`primary`, updates the English and Chinese help for the private selection
+pasteboard, and normalizes legacy `true`/`false` values in the editor. Regression
+tests ensure an explicit disabled value survives saving other settings.
+
 ## Rebuilding the bundled resources
 
 1. Check out the upstream commit shown above.
 2. Apply `native-integration.patch`, `zh-Hans-localization.patch`,
-   `help-localization.patch`, and then `vt-window-resize.patch`, from the
-   upstream repository root.
+   `help-localization.patch`, `vt-window-resize.patch`, and then
+   `macos-copy-on-select.patch`, from the upstream repository root.
 3. Run `bun install --frozen-lockfile`, followed by `bun run check`,
    `bun run lint`, `bun run test`, and `bun run build`.
 4. Replace `macos/Resources/ghostty-config` with the generated `build`

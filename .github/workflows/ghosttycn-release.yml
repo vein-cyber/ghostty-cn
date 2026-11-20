@@ -9,7 +9,7 @@ on:
       tag:
         description: "Release tag (vX.Y.Z-cn.N)"
         required: true
-        default: "v0.9.0-cn.1"
+        default: "v0.10.0-cn.1"
       publish:
         description: "Create the GitHub Release and deploy the appcast"
         required: true
@@ -37,8 +37,8 @@ jobs:
       SPARKLE_VERSION: 2.9.6
       SPARKLE_PUBLIC_KEY: LJbK9TVh5MmcbDO0iNT9P6b6dfaka+x5lr0nDCC1OZQ=
       GHOSTTYCN_SPARKLE_PRIVATE_KEY: ${{ secrets.GHOSTTYCN_SPARKLE_PRIVATE_KEY }}
-      GHOSTTY_UPSTREAM_COMMIT: 9bfa8ee9a1d73f99208c1f056c4e4b5783402ead
-      GHOSTTY_CONFIG_COMMIT: f2eac4de31a8b4eb924850c5f96f4a113c940773
+      GHOSTTY_UPSTREAM_COMMIT: d69f9ed83ca7275fa5afbba0fa968d0d9ada9f5a
+      GHOSTTY_CONFIG_COMMIT: c25fe4c627c056fb25f3f33ac638aef621a2a6d7
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Checkout source
@@ -99,7 +99,7 @@ jobs:
       - name: Install Zig
         uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
         with:
-          version: 0.17.0
+          version: 0.17.1
 
       - name: Verify Xcode
         run: |

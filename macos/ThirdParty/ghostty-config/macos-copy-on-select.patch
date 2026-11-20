@@ -1,0 +1,95 @@
+diff --git a/src/lib/help-i18n.ts b/src/lib/help-i18n.ts
+index 9a8d7e1..56d3e60 100644
+--- a/src/lib/help-i18n.ts
++++ b/src/lib/help-i18n.ts
+@@ -52,7 +52,7 @@ export const zhHansSettingDescriptions: Record<string, string> = {
+     clipboardRead: "控制终端程序通过 OSC 52 读取系统剪贴板：每次询问、始终允许或始终拒绝。",
+     clipboardWrite: "控制终端程序通过 OSC 52 写入系统剪贴板：每次询问、始终允许或始终拒绝。",
+     clipboardWriteLimitBytes: "限制单次 Kitty 剪贴板协议写入的字节数，默认 64 MiB。超出限制会拒绝整次写入；`unlimited` 表示无限制，`0` 表示拒绝非空写入。",
+-    copyOnSelect: "控制选择文本后是否自动复制。`none` 不自动复制（macOS 默认）；`primary` 仅复制到 Linux 选择剪贴板；`clipboard` 复制到系统剪贴板；`both` 在 Linux 复制到两个剪贴板，在 macOS 等同于系统剪贴板。旧值 `true` 和 `false` 仍兼容。",
++    copyOnSelect: "控制选择文本后是否自动复制。`primary` 为 macOS 默认值：复制到 Ghostty 内部的选择剪贴板，供“粘贴所选内容”使用，不覆盖系统剪贴板；`none` 不自动复制；`clipboard` 仅复制到系统剪贴板；`both` 复制到两个剪贴板。旧值 `true` 等同于 `primary`，`false` 等同于 `none`。",
+     clipboardTrimTrailingSpaces: "复制时移除含有其他字符行的行尾空白；完全空白的行始终会移除空白。",
+     clipboardPasteProtection: "粘贴包含换行等疑似危险内容时要求确认，避免复制粘贴攻击导致意外执行命令。",
+     clipboardPasteBracketedSafe: "程序启用括号粘贴模式时，将这类粘贴视为安全并跳过不安全粘贴确认。",
+diff --git a/src/lib/settings/registry.ts b/src/lib/settings/registry.ts
+index 493803d..dac16c7 100644
+--- a/src/lib/settings/registry.ts
++++ b/src/lib/settings/registry.ts
+@@ -353,8 +353,8 @@ export const registry = {
+         widget: {type: "pill", options: [{value: "true", label: "On"}, {value: "false", label: "Off"}, {value: "always", label: "Always"}]}
+     },
+     copyOnSelect: {
+-        default: "none",
+-        description: "Whether to automatically copy selected text to the clipboard.\n\n- `none` - Do not copy selected text automatically (default on macOS)\n- `primary` - Copy to the selection clipboard only; this has no effect on macOS\n- `clipboard` - Copy to the system clipboard only\n- `both` - Copy to both clipboards on Linux and only the system clipboard on macOS\n\nFor compatibility, `true` maps to `primary` on Linux and `clipboard` on macOS; `false` maps to `none`.",
++        default: "primary",
++        description: "Whether to automatically copy selected text to the clipboard.\n\n- `none` - Do not copy selected text automatically\n- `primary` - Copy to the selection clipboard only (default on macOS and Linux). On macOS this is Ghostty's private selection pasteboard, read by Paste Selection; it does not replace the system clipboard.\n- `clipboard` - Copy to the system clipboard only\n- `both` - Copy to both clipboards\n\nFor compatibility, `true` maps to `primary` on macOS and Linux; `false` maps to `none`.",
+         key: "copy-on-select",
+         name: "Copy on select",
+         widget: {type: "pill", options: [{value: "none", label: "None"}, {value: "primary", label: "Primary"}, {value: "clipboard", label: "Clipboard"}, {value: "both", label: "Both"}]}
+diff --git a/src/lib/stores/config.svelte.test.ts b/src/lib/stores/config.svelte.test.ts
+index 5f316ee..15e5cfd 100644
+--- a/src/lib/stores/config.svelte.test.ts
++++ b/src/lib/stores/config.svelte.test.ts
+@@ -7,7 +7,7 @@ import config, {
+     load,
+     resetSetting
+ } from "./config.svelte";
+-import {serialize} from "$lib/utils/parse";
++import {parse, serialize} from "$lib/utils/parse";
+ 
+ // These lock in the flat-string store contract: every value is a string | string[], and
+ // diff()/load() compare/merge them as such (see the store-flatten note in AGENTS.md). There was
+@@ -106,6 +106,11 @@ describe("load()", () => {
+ });
+ 
+ describe("round-trip diff -> serialize", () => {
++    it("preserves an explicit legacy copy-on-select false with the primary default", () => {
++        const differences = diffFromDefaults(parse("copy-on-select = false"));
++        expect(serialize(differences, false)).toContain("copy-on-select = none");
++    });
++
+     it("renders a flat diff as Ghostty config lines", () => {
+         config.fontSize = "18";
+         config.desktopNotifications = "false";
+diff --git a/src/lib/utils/parse.test.ts b/src/lib/utils/parse.test.ts
+index c847ec4..fb6a5e5 100644
+--- a/src/lib/utils/parse.test.ts
++++ b/src/lib/utils/parse.test.ts
+@@ -40,6 +40,15 @@ describe("parse() color normalization", () => {
+     });
+ });
+ 
++describe("macOS copy-on-select compatibility", () => {
++    it.each([
++        {value: "true", expected: "primary"},
++        {value: "false", expected: "none"}
++    ])("normalizes $value to $expected", ({value, expected}) => {
++        expect(parse(`copy-on-select = ${value}`).copyOnSelect).toBe(expected);
++    });
++});
++
+ describe("parse() repeatable settings", () => {
+     it("accumulates repeated keys into an array", () => {
+         const result = parse("font-family = JetBrainsMono NF\nfont-family = Symbols Nerd Font");
+diff --git a/src/lib/utils/parse.ts b/src/lib/utils/parse.ts
+index 8448ad0..be85517 100644
+--- a/src/lib/utils/parse.ts
++++ b/src/lib/utils/parse.ts
+@@ -39,10 +39,16 @@ export function parse(configString: string) {
+                 newKey += split[s].substring(1);
+             }
+ 
+-            const normalized = colors.includes(key) && value.length === 6 && !value.startsWith("#")
++            let normalized = colors.includes(key) && value.length === 6 && !value.startsWith("#")
+                 ? `#${value}`
+                 : value;
+ 
++            // Match the macOS core aliases before selecting an enum control.
++            if (key === "copy-on-select") {
++                if (value === "true") normalized = "primary";
++                else if (value === "false") normalized = "none";
++            }
++
+             // Repeatable settings (font-family, keybind, …) may appear on multiple lines;
+             // accumulate them into an array rather than letting later lines overwrite earlier
+             // ones. keybind needs no carveout here — it's just another `repeatable` key.
