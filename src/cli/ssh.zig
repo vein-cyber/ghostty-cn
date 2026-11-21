@@ -9,6 +9,7 @@ const DiskCache = @import("ssh_cache.zig").DiskCache;
 const internal_os = @import("../os/main.zig");
 const terminfopkg = @import("../terminfo/main.zig");
 const global = @import("../global.zig");
+const directory = @import("ssh_directory.zig");
 
 const log = std.log.scoped(.ssh);
 
@@ -272,13 +273,28 @@ fn runInner(
         return 2;
     }
 
+    // Only GhosttyCN terminals opt in. No remote code is injected for pipes,
+    // user commands or conflicting SSH configuration.
+    const directory_requested = blk: {
+        if (!directory.interactiveArgs(opts._ssh_args.items)) break :blk false;
+        if (!(std.Io.File.stdin().isTty(global.io()) catch false)) break :blk false;
+        var env = try global.environMap();
+        defer env.deinit();
+        break :blk std.mem.eql(u8, env.get("GHOSTTYCN_REMOTE_CWD") orelse "", "1");
+    };
+    const resolved = if (opts.terminfo or directory_requested)
+        resolveConfiguration(alloc, opts.ssh, opts._ssh_args.items)
+    else
+        null;
+
     const session: struct {
         term: []const u8,
         to_cache: ?struct { cache: DiskCache, dest: []const u8 } = null,
     } = session: {
         if (!opts.terminfo) break :session .{ .term = "xterm-256color" };
 
-        const dest = resolveDestination(alloc, opts.ssh, opts._ssh_args.items) orelse {
+        const dest = if (resolved) |value| value.destination else null;
+        const destination = dest orelse {
             warnPrint(stderr, "could not resolve ssh destination; skipping terminfo install", .{});
             break :session .{ .term = "xterm-256color" };
         };
@@ -294,7 +310,7 @@ fn runInner(
         if (cache) |c| {
             const cached = c.contains(
                 alloc,
-                dest,
+                destination,
                 terminfopkg.version,
             ) catch |err| cached: {
                 if (DiskCache.isFailure(err)) warnPrint(
@@ -306,16 +322,16 @@ fn runInner(
             };
 
             if (cached) {
-                verbosePrint(opts, stderr, "dest: {s} (cached, skipping install)", .{dest});
+                verbosePrint(opts, stderr, "dest: {s} (cached, skipping install)", .{destination});
                 break :session .{ .term = "xterm-ghostty" };
             } else {
-                verbosePrint(opts, stderr, "dest: {s} (not cached, will install)", .{dest});
+                verbosePrint(opts, stderr, "dest: {s} (not cached, will install)", .{destination});
             }
         } else {
-            verbosePrint(opts, stderr, "dest: {s} (cache disabled, will install)", .{dest});
+            verbosePrint(opts, stderr, "dest: {s} (cache disabled, will install)", .{destination});
         }
 
-        stderr.print("Setting up xterm-ghostty terminfo on {s}...\n", .{dest}) catch {};
+        stderr.print("Setting up xterm-ghostty terminfo on {s}...\n", .{destination}) catch {};
         stderr.flush() catch {};
 
         installRemoteTerminfo(alloc, opts, stderr) catch |err| {
@@ -324,7 +340,7 @@ fn runInner(
         };
         break :session .{
             .term = "xterm-ghostty",
-            .to_cache = if (cache) |c| .{ .cache = c, .dest = dest } else null,
+            .to_cache = if (cache) |c| .{ .cache = c, .dest = destination } else null,
         };
     };
 
@@ -353,7 +369,9 @@ fn runInner(
     const argv = try std.mem.concat(alloc, []const u8, &.{
         &.{opts.ssh},
         env_opts,
+        if (directory_requested and resolved != null and resolved.?.directory_allowed) &.{"-t"} else &.{},
         opts._ssh_args.items,
+        if (directory_requested and resolved != null and resolved.?.directory_allowed) &.{directory.command} else &.{},
     });
     verbosePrint(opts, stderr, "exec: {f}", .{Joined{ .items = argv }});
 
@@ -465,11 +483,13 @@ fn checkExit(term: std.process.Child.Term, label: []const u8) error{ChildFailed}
 /// Run `ssh -G <args>` and parse the output for `user` and `hostname`.
 /// Returns the resolved `user@hostname`, or null if the destination
 /// could not be resolved.
-fn resolveDestination(
+const ResolvedConfiguration = struct { destination: ?[]const u8, directory_allowed: bool };
+
+fn resolveConfiguration(
     alloc: Allocator,
     ssh: []const u8,
     args: []const []const u8,
-) ?[]const u8 {
+) ?ResolvedConfiguration {
     const argv = std.mem.concat(alloc, []const u8, &.{
         &.{ ssh, "-G" },
         args,
@@ -483,7 +503,10 @@ fn resolveDestination(
         return null;
     };
     checkExit(result.term, "ssh -G") catch return null;
-    return parseDestination(alloc, result.stdout);
+    return .{
+        .destination = parseDestination(alloc, result.stdout),
+        .directory_allowed = directory.configurationAllows(result.stdout),
+    };
 }
 
 /// Parse `ssh -G` output for `user`, `hostname` and `port` and return the

@@ -1586,6 +1586,16 @@ pub const StreamHandler = struct {
             },
         };
         if (!host_valid) {
+            // Preserve the upstream local-pwd boundary. A non-local OSC 7 is
+            // only an untrusted UI hint, bound to the PTY foreground process
+            // on the app thread; it never changes terminal pwd or titles.
+            if (comptime builtin.target.os.tag == .macos and build_config.app_runtime == .none) {
+                if (url.len <= 8192 and std.mem.indexOfScalar(u8, url, 0) == null) {
+                    if (apprt.surface.Message.WriteReq.init(self.alloc, url)) |req| {
+                        self.surfaceMessageWriter(.{ .remote_directory_change = req });
+                    } else |_| {}
+                }
+            }
             log.warn("OSC 7 host ({s}) must be local", .{host});
             return;
         }

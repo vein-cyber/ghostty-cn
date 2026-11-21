@@ -127,6 +127,12 @@ extension Ghostty {
             return Int(exactly: pid)
         }
 
+        var remoteDirectoryReport: RemoteDirectoryReport? {
+            let report = ghostty_surface_remote_directory(surface)
+            let uri = AllocatedString(report.uri).string
+            return RemoteDirectoryReport(uri: uri, sequence: report.sequence, foregroundGroup: report.foreground_pid)
+        }
+
         /// The PTY device name for this surface.
         var ttyName: String? {
             let ttyName = AllocatedString(ghostty_surface_tty_name(surface)).string

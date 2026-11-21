@@ -1,6 +1,12 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "cnF-LE-001.title": {
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "File Browser" } },
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "文件管理" } }
+      }
+    },
     "dos-9S-LXC.title": {
       "localizations": {
         "en": {

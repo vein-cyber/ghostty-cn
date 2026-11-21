@@ -134,6 +134,9 @@ pub const Message = union(enum) {
     /// The terminal has reported a change in the working directory.
     pwd_change: WriteReq,
 
+    /// UI-only remote OSC 7 report; must not update the local terminal pwd.
+    remote_directory_change: WriteReq,
+
     /// The terminal encountered a bell character.
     ring_bell,
 

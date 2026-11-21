@@ -33,6 +33,10 @@ protocol TerminalViewModel: ObservableObject {
     /// The command palette state.
     var commandPaletteIsShowing: Bool { get set }
 
+    /// Optional native file browser, independent for each terminal window/tab.
+    var fileBrowserIsShowing: Bool { get set }
+    var isBackgroundOpaque: Bool { get }
+
     /// The update overlay should be visible.
     var updateOverlayIsVisible: Bool { get }
 }
@@ -49,6 +53,11 @@ struct TerminalView<ViewModel: TerminalViewModel>: View {
 
     /// The most recently focused surface, equal to `focusedSurface` when it is non-nil.
     @State private var lastFocusedSurface: Weak<Ghostty.SurfaceView>?
+
+    @StateObject private var fileBrowser = FileBrowserModel()
+    @AppStorage(FileBrowserPreferences.positionKey, store: .ghostty) private var fileBrowserPosition = "left"
+    @AppStorage(FileBrowserPreferences.widthKey, store: .ghostty)
+    private var fileBrowserWidth = FileBrowserPreferences.defaultWidth
 
     // This seems like a crutch after switching from SwiftUI to AppKit lifecycle.
     @FocusState private var focused: Bool
@@ -79,30 +88,9 @@ struct TerminalView<ViewModel: TerminalViewModel>: View {
                         DebugBuildWarningView()
                     }
 
-                    TerminalSplitTreeView(
-                        tree: viewModel.surfaceTree,
-                        action: { delegate?.performSplitAction($0) })
-                        .environmentObject(ghostty)
-                        .ghosttyLastFocusedSurface(lastFocusedSurface)
-                        .focused($focused)
-                        .onAppear { self.focused = true }
-                        .onChange(of: focusedSurface) { newValue in
-                            // We want to keep track of our last focused surface so even if
-                            // we lose focus we keep this set to the last non-nil value.
-                            if newValue != nil {
-                                lastFocusedSurface = .init(newValue)
-                                self.delegate?.focusedSurfaceDidChange(to: newValue)
-                            }
-                        }
-                        .onChange(of: pwdURL) { newValue in
-                            self.delegate?.pwdDidChange(to: newValue)
-                        }
-                        .onChange(of: cellSize) { newValue in
-                            guard let size = newValue else { return }
-                            self.delegate?.cellSizeDidChange(to: size)
-                        }
-                        .frame(idealWidth: lastFocusedSurface?.value?.initialSize?.width,
-                               idealHeight: lastFocusedSurface?.value?.initialSize?.height)
+                    FileBrowserSplitLayout(
+                        isVisible: viewModel.fileBrowserIsShowing, position: fileBrowserPosition,
+                        preferredWidth: $fileBrowserWidth, sidebar: fileBrowserPane, terminal: terminalPane)
                 }
                 // Ignore safe area to extend up in to the titlebar region if we have the "hidden" titlebar style
                 .ignoresSafeArea(.container, edges: ghostty.config.macosTitlebarStyle == .hidden ? .top : [])
@@ -123,7 +111,69 @@ struct TerminalView<ViewModel: TerminalViewModel>: View {
                 }
             }
             .frame(maxWidth: .greatestFiniteMagnitude, maxHeight: .greatestFiniteMagnitude)
+            .onChange(of: viewModel.fileBrowserIsShowing) { if !$0 { fileBrowser.disconnect() } }
+            .onDisappear { fileBrowser.disconnect() }
+            .task(id: viewModel.fileBrowserIsShowing) {
+                guard viewModel.fileBrowserIsShowing else { return }
+                while !Task.isCancelled {
+                    let surface = lastFocusedSurface?.value ?? focusedSurface
+                    let id = surface?.id
+                    let group = surface?.surfaceModel?.foregroundPID
+                    let context = await Task.detached(priority: .utility) {
+                        TerminalSSHDetector.context(foregroundGroup: group)
+                    }.value
+                    guard !Task.isCancelled else { return }
+                    if id == (lastFocusedSurface?.value ?? focusedSurface)?.id {
+                        fileBrowser.observeTerminal(
+                            context, directory: surface?.pwd.map { URL(fileURLWithPath: $0) },
+                            remoteDirectory: surface?.surfaceModel?.remoteDirectoryReport, foregroundGroup: group)
+                    }
+                    try? await Task.sleep(for: .seconds(1))
+                }
+            }
         }
+    }
+
+    private var fileBrowserPane: some View {
+        let browser = FileBrowserView(model: fileBrowser) {
+            viewModel.fileBrowserIsShowing = false
+            if let surface = lastFocusedSurface?.value { surface.window?.makeFirstResponder(surface) }
+        }
+        return Group {
+            if let surface = lastFocusedSurface?.value ?? focusedSurface {
+                browser.modifier(FileBrowserSurfaceAppearance(surface: surface, forceOpaque: viewModel.isBackgroundOpaque))
+            } else {
+                let appearance = FileBrowserAppearance(
+                    color: ghostty.config.backgroundColor, opacity: ghostty.config.backgroundOpacity,
+                    usesWindowGlass: ghostty.config.backgroundBlur.isGlassStyle && FileBrowserAppearance.windowGlassAvailable,
+                    forceOpaque: viewModel.isBackgroundOpaque)
+                browser.background(Color(nsColor: appearance.background)).environment(\.colorScheme, appearance.colorScheme)
+            }
+        }
+    }
+
+    private var terminalPane: some View {
+        TerminalSplitTreeView(tree: viewModel.surfaceTree, action: { delegate?.performSplitAction($0) })
+            .environmentObject(ghostty)
+            .ghosttyLastFocusedSurface(lastFocusedSurface)
+            .focused($focused)
+            .onAppear { self.focused = true }
+            .onChange(of: focusedSurface) { newValue in
+                if newValue != nil {
+                    lastFocusedSurface = .init(newValue)
+                    self.delegate?.focusedSurfaceDidChange(to: newValue)
+                }
+            }
+            .onChange(of: pwdURL) { newValue in
+                self.delegate?.pwdDidChange(to: newValue)
+                fileBrowser.follow(newValue, active: viewModel.fileBrowserIsShowing)
+            }
+            .onChange(of: cellSize) { newValue in
+                guard let size = newValue else { return }
+                self.delegate?.cellSizeDidChange(to: size)
+            }
+            .frame(idealWidth: lastFocusedSurface?.value?.initialSize?.width,
+                   idealHeight: lastFocusedSurface?.value?.initialSize?.height)
     }
 }
 

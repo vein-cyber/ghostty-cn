@@ -71,6 +71,9 @@ id: u64,
 /// Allocator
 alloc: Allocator,
 
+/// Separate, untrusted remote-directory hints for the embedded file browser.
+remote_directory: @import("RemoteDirectory.zig") = .{},
+
 /// The app that this surface is attached to.
 app: *App,
 
@@ -827,6 +830,7 @@ pub fn init(
 }
 
 pub fn deinit(self: *Surface) void {
+    self.remote_directory.clear(self.alloc);
     // Stop search thread
     if (self.search) |*s| s.deinit();
 
@@ -1120,8 +1124,14 @@ pub fn handleMessage(self: *Surface, msg: Message) !void {
             },
         },
 
+        .remote_directory_change => |w| {
+            defer w.deinit();
+            try self.remote_directory.update(self.alloc, w.slice(), self.getProcessInfo(.foreground_pid) orelse 0);
+        },
+
         .pwd_change => |w| {
             defer w.deinit();
+            self.remote_directory.clear(self.alloc);
 
             var stack_buf: [256]u8 = undefined;
             var stack: std.heap.BufferFirstAllocator = .init(&stack_buf, self.alloc);

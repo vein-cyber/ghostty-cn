@@ -23,6 +23,12 @@ const configpkg = @import("../config.zig");
 const Config = configpkg.Config;
 const String = @import("../main_c.zig").String;
 
+const RemoteDirectoryReport = extern struct {
+    sequence: u64,
+    foreground_pid: u64,
+    uri: String,
+};
+
 const log = std.log.scoped(.embedded_window);
 
 pub const resourcesDir = internal_os.resourcesDir;
@@ -2013,6 +2019,32 @@ pub const CAPI = struct {
     /// Returns the PID of the foreground process for the surface PTY.
     export fn ghostty_surface_foreground_pid(surface: *Surface) u64 {
         return surface.core_surface.getProcessInfo(.foreground_pid) orelse 0;
+    }
+
+    export fn ghostty_ssh_directory_command() [*:0]const u8 {
+        return @import("../cli/ssh_directory.zig").command.ptr;
+    }
+
+    export fn ghostty_ssh_directory_report() [*:0]const u8 {
+        return @import("../cli/ssh_directory.zig").report.ptr;
+    }
+
+    /// Called on the app thread. The URI is an owned copy, not terminal state.
+    export fn ghostty_surface_remote_directory(surface: *Surface) RemoteDirectoryReport {
+        const report = &surface.core_surface.remote_directory;
+        const copy = if (report.uri) |uri|
+            surface.app.core_app.alloc.dupeSentinel(u8, uri, 0) catch return .{
+                .sequence = report.sequence,
+                .foreground_pid = 0,
+                .uri = .empty,
+            }
+        else
+            return .{ .sequence = report.sequence, .foreground_pid = 0, .uri = .empty };
+        return .{
+            .sequence = report.sequence,
+            .foreground_pid = report.foreground_pid,
+            .uri = .fromSlice(copy),
+        };
     }
 
     /// Returns the PTY name for the surface. The returned string must be

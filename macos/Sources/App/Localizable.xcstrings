@@ -1,6 +1,629 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "The file browser cannot follow this terminal's SSH connection. It will resume when the terminal connection changes.": {
+      "comment": "Automatic-only file browser; unsupported SSH must not fall back to local files",
+      "localizations": {
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "文件管理暂不支持当前终端的 SSH 连接。终端连接变化后会自动恢复。" } }
+      }
+    },
+    "The terminal file connection is closed. Use Refresh to try again.": {
+      "comment": "Retry through the existing refresh control, not a standalone reconnect action",
+      "localizations": {
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "终端的文件连接已关闭，请点击刷新重试。" } }
+      }
+    },
+    "The file operation timed out. Use Refresh before trying again.": {
+      "comment": "File operation timeout with refresh-only recovery",
+      "localizations": {
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "文件操作超时，请刷新后重试。" } }
+      }
+    },
+    "Delete item": {
+      "comment": "File browser: permanently delete a remote file or empty folder. Not the keyboard Delete key.",
+      "localizations": {
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "删除" } }
+      }
+    },
+    "This terminal's SSH connection cannot be used for file browsing.": {
+      "comment": "File browser could not safely use the terminal SSH parameters",
+      "localizations": {
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "无法使用当前终端的 SSH 连接浏览文件。" } }
+      }
+    },
+    "Remote folder not reported yet": {
+      "comment": "Remote file browser: no directory report received; browsing still works",
+      "localizations": {
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "暂未获取远程目录" } }
+      }
+    },
+    "Learn why": {
+      "comment": "Troubleshooting link shown only while remote folder reports are unavailable",
+      "localizations": {
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "了解原因" } }
+      }
+    },
+    "Remote folder troubleshooting": {
+      "comment": "Remote file browser troubleshooting sheet title",
+      "localizations": {
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "远程目录跟随排障" } }
+      }
+    },
+    "Folder following waits for the remote shell to report its current folder. File browsing and transfers remain available without these reports.": {
+      "comment": "Explain missing directory reports without treating SFTP as broken",
+      "localizations": {
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "目录跟随需要远程 shell 报告当前目录。暂未收到报告时，仍可正常浏览文件和传输。" } }
+      }
+    },
+    "After updating, open a new GhosttyCN terminal and reconnect with ssh. Automatic setup supports Bash 4+ and Zsh; custom SSH commands, disabled shell integration, other shells and nested connections may need manual browsing.": {
+      "comment": "Remote directory troubleshooting: supported shells and reconnect advice",
+      "localizations": {
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "更新后，请新建 GhosttyCN 终端并使用 ssh 重新连接。自动集成支持 Bash 4+ 和 Zsh；自定义 SSH 命令、关闭 shell 集成、其他 shell 及嵌套连接可能需要手动浏览目录。" } }
+      }
+    },
+    "Manual fallback for an existing session": {
+      "comment": "Collapsed troubleshooting disclosure; never a required setup step",
+      "localizations": {
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "已有会话的手动回退方式" } }
+      }
+    },
+    "Only for Bash or Zsh: review and run this command in the intended remote shell. It enables reports for this session without changing startup files. GhosttyCN never types it into an existing session.": {
+      "comment": "Optional manual hook safety instructions inside troubleshooting disclosure",
+      "localizations": {
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "仅适用于 Bash 或 Zsh：确认命令内容后，在目标远程 shell 中运行。只为当前会话启用目录报告，不修改启动文件。GhosttyCN 不会向已有会话自动输入这段命令。" } }
+      }
+    },
+    "Remote folder sync help…": {
+      "comment": "Automatic SSH directory integration help",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "远程目录同步帮助…"
+          }
+        }
+      }
+    },
+    "Remote folder sync": {
+      "comment": "Automatic SSH directory integration help",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "远程目录同步"
+          }
+        }
+      }
+    },
+    "New interactive SSH sessions started with ssh in GhosttyCN automatically enable directory reports for Bash 4+ and Zsh. Reconnect from a new GhosttyCN terminal after updating. Existing sessions and custom SSH commands can use the manual fallback below.": {
+      "comment": "Automatic SSH directory integration help",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在 GhosttyCN 中正常运行 ssh 新建的交互式连接，会为远程 Bash 4+ 和 Zsh 自动启用目录报告。更新后请从新建的 GhosttyCN 终端重新连接。已有会话或自定义 SSH 命令可使用下面的手动回退方式。"
+          }
+        }
+      }
+    },
+    "File browser width": {
+      "comment": "File browser resize handle accessibility",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件侧栏宽度"
+          }
+        }
+      }
+    },
+    "Drag to resize the file browser. Double-click to reset its width.": {
+      "comment": "File browser resize handle accessibility",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拖动以调整文件侧栏宽度，连按两下可恢复默认宽度。"
+          }
+        }
+      }
+    },
+    "Enable remote folder sync…": {
+      "comment": "Remote file browser directory integration",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用远程目录同步…"
+          }
+        }
+      }
+    },
+    "Enable remote folder sync": {
+      "comment": "Remote file browser directory integration",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "启用远程目录同步"
+          }
+        }
+      }
+    },
+    "Select the remote shell, copy the command, and run it in that SSH terminal. It only enables directory reports for this shell session; no files are modified. Existing prompt hooks are preserved.": {
+      "comment": "Remote file browser directory integration",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择远程 shell，复制命令并在对应的 SSH 终端中执行。仅为当前 shell 会话启用目录报告，不修改任何文件，并保留现有提示符钩子。"
+          }
+        }
+      }
+    },
+    "Remote shell": {
+      "comment": "Remote file browser directory integration",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "远程 shell"
+          }
+        }
+      }
+    },
+    "Run this only in the intended remote shell. Nested SSH and shells that do not report directories may require manual browsing. Closing the SSH session removes this temporary hook.": {
+      "comment": "Remote file browser directory integration",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅在目标远程 shell 中运行。嵌套 SSH 或不报告目录的 shell 可能仍需手动浏览。关闭 SSH 会话后，此临时钩子即失效。"
+          }
+        }
+      }
+    },
+    "Copy command": {
+      "comment": "Remote file browser directory integration",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制命令"
+          }
+        }
+      }
+    },
+    "Left side": {
+      "comment": "File browser sidebar position, not a mouse button",
+      "localizations": {
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "左侧" } }
+      }
+    },
+    "Right side": {
+      "comment": "File browser sidebar position, not a mouse button",
+      "localizations": {
+        "zh-Hans": { "stringUnit": { "state": "translated", "value": "右侧" } }
+      }
+    },
+    "Sidebar position": {
+      "comment": "File browser appearance and SSH following",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "侧栏位置"
+          }
+        }
+      }
+    },
+    "Show file browser in new windows": {
+      "comment": "File browser appearance and SSH following",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新窗口默认显示文件管理"
+          }
+        }
+      }
+    },
+    "SFTP folders are browsed independently of the terminal's remote working directory.": {
+      "comment": "File browser appearance and SSH following",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SFTP 目录独立浏览，暂不跟随终端内的远程 cd。"
+          }
+        }
+      }
+    },
+    "Files": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件"
+          }
+        }
+      }
+    },
+    "File Browser": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件管理"
+          }
+        }
+      }
+    },
+    "Folder path": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件夹路径"
+          }
+        }
+      }
+    },
+    "Parent folder": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上一级文件夹"
+          }
+        }
+      }
+    },
+    "Filter files": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "筛选文件"
+          }
+        }
+      }
+    },
+    "No files to display": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有可显示的文件"
+          }
+        }
+      }
+    },
+    "File operation failed": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件操作失败"
+          }
+        }
+      }
+    },
+    "Remove this item?": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除此项目？"
+          }
+        }
+      }
+    },
+    "Move to Trash": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移到废纸篓"
+          }
+        }
+      }
+    },
+    "The item will be moved to the Trash.": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此项目将移到废纸篓。"
+          }
+        }
+      }
+    },
+    "Remote deletion is permanent. Folders must be empty.": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "远程删除无法撤销。只能删除空文件夹。"
+          }
+        }
+      }
+    },
+    "Refresh files": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "刷新文件"
+          }
+        }
+      }
+    },
+    "Show hidden files": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示隐藏文件"
+          }
+        }
+      }
+    },
+    "Upload file": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上传文件"
+          }
+        }
+      }
+    },
+    "Hide file browser": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏文件管理"
+          }
+        }
+      }
+    },
+    "Loading files…": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在加载文件…"
+          }
+        }
+      }
+    },
+    "Local files": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地文件"
+          }
+        }
+      }
+    },
+    "Open folder": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开文件夹"
+          }
+        }
+      }
+    },
+    "Preview file": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "预览文件"
+          }
+        }
+      }
+    },
+    "Copy path": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制路径"
+          }
+        }
+      }
+    },
+    "Reveal in Finder": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在“访达”中显示"
+          }
+        }
+      }
+    },
+    "Download file": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载文件"
+          }
+        }
+      }
+    },
+    "Connect": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "连接"
+          }
+        }
+      }
+    },
+    "New folder": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新建文件夹"
+          }
+        }
+      }
+    },
+    "Rename": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重命名"
+          }
+        }
+      }
+    },
+    "Name": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "名称"
+          }
+        }
+      }
+    },
+    "Save": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存"
+          }
+        }
+      }
+    },
+    "Preview limited to the first 256 KiB.": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅预览文件的前 256 KiB。"
+          }
+        }
+      }
+    },
+    "This file is not UTF-8 text and cannot be previewed.": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此文件不是 UTF-8 文本，无法预览。"
+          }
+        }
+      }
+    },
+    "Read-only preview": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只读预览"
+          }
+        }
+      }
+    },
+    "Enter a single file name without slashes or control characters.": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请输入单个文件名，不可包含斜杠或控制字符。"
+          }
+        }
+      }
+    },
+    "The server returned an invalid SFTP response.": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务器返回了无效的 SFTP 响应。"
+          }
+        }
+      }
+    },
+    "Only regular files can be previewed or transferred. Symbolic links are not followed.": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只能预览或传输普通文件，不会跟随符号链接。"
+          }
+        }
+      }
+    },
+    "This folder has too many entries to display safely.": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此文件夹中的项目过多，无法安全显示。"
+          }
+        }
+      }
+    },
+    "File operation failed:": {
+      "comment": "Native file browser",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件操作失败："
+          }
+        }
+      }
+    },
     "An application is attempting to read from the clipboard.\nThe current clipboard contents are shown below.": {
       "comment": "Clipboard read permission prompt; never display an untrusted program name",
       "localizations": {

@@ -118,7 +118,8 @@ fi
 #
 # Wrap `ssh` with `ghostty +ssh` and translate the shell-integration
 # feature flags into command options.
-if [[ "$GHOSTTY_SHELL_FEATURES" == *ssh-* ]]; then
+if [[ "$GHOSTTY_SHELL_FEATURES" == *ssh-* ||
+      ( ${GHOSTTYCN_REMOTE_CWD-} == 1 && $(builtin type -t ssh) != function && $(builtin type -t ssh) != alias ) ]]; then
   function ssh() {
     builtin local -a flags
     flags=()

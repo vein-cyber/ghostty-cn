@@ -56,6 +56,8 @@ class BaseTerminalController: NSWindowController,
     /// This can be set to show/hide the command palette.
     @Published var commandPaletteIsShowing: Bool = false
 
+    @Published var fileBrowserIsShowing: Bool = FileBrowserPreferences.initiallyVisible()
+
     /// Set if the terminal view should show the update overlay.
     @Published var updateOverlayIsVisible: Bool = false
 
@@ -89,7 +91,7 @@ class BaseTerminalController: NSWindowController,
     private var derivedConfig: DerivedConfig
 
     /// Track whether background is forced opaque (true) or using config transparency (false)
-    var isBackgroundOpaque: Bool = false
+    @Published var isBackgroundOpaque: Bool = false
 
     /// The cancellables related to our focused surface.
     private var focusedSurfaceCancellables: Set<AnyCancellable> = []
@@ -1426,6 +1428,11 @@ class BaseTerminalController: NSWindowController,
         ghostty.changeFontSize(surface: surface, .reset)
     }
 
+    @IBAction func toggleFileBrowser(_ sender: Any?) {
+        fileBrowserIsShowing.toggle()
+        if !fileBrowserIsShowing { window?.makeFirstResponder(focusedSurface) }
+    }
+
     @IBAction func toggleCommandPalette(_ sender: Any?) {
         commandPaletteIsShowing.toggle()
         if commandPaletteIsShowing {
@@ -1499,6 +1506,10 @@ class BaseTerminalController: NSWindowController,
 extension BaseTerminalController: NSMenuItemValidation {
     func validateMenuItem(_ item: NSMenuItem) -> Bool {
         switch item.action {
+        case #selector(toggleFileBrowser):
+            item.state = fileBrowserIsShowing ? .on : .off
+            return true
+
         case #selector(findHide):
             return focusedSurface?.searchState != nil
 

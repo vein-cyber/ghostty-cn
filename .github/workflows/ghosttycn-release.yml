@@ -148,7 +148,7 @@ jobs:
             GHOSTTY_COMMIT="${GITHUB_SHA}" \
             build
 
-      - name: Verify embedded settings startup
+      - name: Verify settings and file browser
         run: |
           mkdir -p .action
           xcodebuild \
@@ -158,11 +158,20 @@ jobs:
             "SYMROOT=${GITHUB_WORKSPACE}/macos/build" \
             -skip-testing:GhosttyUITests \
             -only-testing:GhosttyTests/GhosttyConfigWebViewTests \
+            -only-testing:GhosttyTests/FileBrowserTests \
+            -only-testing:GhosttyTests/FileBrowserLayoutTests \
+            -only-testing:GhosttyTests/TerminalSSHTests \
+            -only-testing:GhosttyTests/RemoteDirectoryTests \
             -resultBundlePath .action/settings-startup.xcresult \
             test
           xcrun xcresulttool get test-results summary \
             --path .action/settings-startup.xcresult --format json > .action/settings-startup.json
           python3 -c 'import json; r=json.load(open(".action/settings-startup.json")); assert r["result"] == "Passed" and r["passedTests"] > 0, r'
+
+      - name: Verify SSH directory integration
+        run: |
+          python3 .github/scripts/test-ssh-directory-integration.py \
+            --ghostty macos/build/ReleaseLocal/GhosttyCN.app/Contents/MacOS/ghostty
 
       - name: Verify application bundle
         env:
@@ -219,8 +228,7 @@ jobs:
             if [[ -f "${curated_notes}" ]]; then
               cat "${curated_notes}"
               echo
-            fi
-            if [[ "${{ steps.version.outputs.publish }}" == "true" ]]; then
+            elif [[ "${{ steps.version.outputs.publish }}" == "true" ]]; then
               echo "## 完整提交记录"
               echo
               gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \

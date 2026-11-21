@@ -817,6 +817,12 @@ const Subprocess = struct {
             break :shell integration.command;
         };
 
+        // GhosttyCN's SSH wrapper enables session-only remote cwd integration.
+        // User environment overrides below can explicitly set this to 0.
+        if (comptime builtin.target.os.tag == .macos) {
+            if (env.get("GHOSTTYCN_REMOTE_CWD") == null) try env.put("GHOSTTYCN_REMOTE_CWD", "1");
+        }
+
         // Add the environment variables that override any others.
         {
             var it = cfg.env_override.iterator();

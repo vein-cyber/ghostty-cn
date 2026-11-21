@@ -330,7 +330,8 @@ _ghostty_deferred_init() {
     #
     # Wrap `ssh` with `ghostty +ssh` and translate the shell-integration
     # feature flags into command options.
-    if [[ "$GHOSTTY_SHELL_FEATURES" == *ssh-* ]]; then
+    if [[ "$GHOSTTY_SHELL_FEATURES" == *ssh-* ]] ||
+       { [[ ${GHOSTTYCN_REMOTE_CWD-} == 1 ]] && (( ! $+functions[ssh] && ! $+aliases[ssh] )); }; then
       function ssh() {
         local flags=()
         [[ "$GHOSTTY_SHELL_FEATURES" != *ssh-env* ]] && flags+=(--forward-env=false)
