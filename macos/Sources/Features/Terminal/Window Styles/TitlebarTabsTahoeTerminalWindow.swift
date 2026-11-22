@@ -84,7 +84,7 @@ class TitlebarTabsTahoeTerminalWindow: TransparentTitlebarTerminalWindow, NSTool
         guard isTabBar(childViewController) else {
             // After dragging a tab into a new window, `hasTabBar` needs to be
             // updated to properly review window title
-            viewModel.hasTabBar = false
+            if tabBarView == nil { viewModel.hasTabBar = false }
 
             super.addTitlebarAccessoryViewController(childViewController)
             return
@@ -132,6 +132,8 @@ class TitlebarTabsTahoeTerminalWindow: TransparentTitlebarTerminalWindow, NSTool
             NotificationCenter.default.removeObserver(oldValue)
         }
     }
+
+    private var tabBarConstraints: [NSLayoutConstraint] = []
 
     /// Take the NSTabBar that is on the window and convert it into titlebar tabs.
     ///
@@ -194,16 +196,18 @@ class TitlebarTabsTahoeTerminalWindow: TransparentTitlebarTerminalWindow, NSTool
         accessoryView.translatesAutoresizingMaskIntoConstraints = false
 
         // Setup all our constraints
-        NSLayoutConstraint.activate([
+        NSLayoutConstraint.deactivate(tabBarConstraints)
+        tabBarConstraints = [
             clipView.leftAnchor.constraint(equalTo: container.leftAnchor, constant: leftPadding),
-            clipView.rightAnchor.constraint(equalTo: container.rightAnchor),
+            clipView.rightAnchor.constraint(equalTo: container.rightAnchor, constant: -fileBrowserTitlebarWidth),
             clipView.topAnchor.constraint(equalTo: container.topAnchor, constant: 2),
             clipView.heightAnchor.constraint(equalTo: container.heightAnchor),
             accessoryView.leftAnchor.constraint(equalTo: clipView.leftAnchor),
             accessoryView.rightAnchor.constraint(equalTo: clipView.rightAnchor),
             accessoryView.topAnchor.constraint(equalTo: clipView.topAnchor),
             accessoryView.heightAnchor.constraint(equalTo: clipView.heightAnchor),
-        ])
+        ]
+        NSLayoutConstraint.activate(tabBarConstraints)
 
         clipView.needsLayout = true
         accessoryView.needsLayout = true
@@ -247,6 +251,8 @@ class TitlebarTabsTahoeTerminalWindow: TransparentTitlebarTerminalWindow, NSTool
 
         // Clear our observations
         self.tabBarObserver = nil
+        NSLayoutConstraint.deactivate(tabBarConstraints)
+        tabBarConstraints = []
     }
 
     // MARK: NSToolbarDelegate

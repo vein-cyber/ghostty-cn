@@ -5,6 +5,252 @@ import Testing
 
 @MainActor
 struct FileBrowserLayoutTests {
+    @Test func compactPathOpensAnEditorAndReturnNavigatesWhileEscapeCancels() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("GhosttyCN-Path-Editor-" + UUID().uuidString)
+        let child = root.appendingPathComponent("child folder")
+        try FileManager.default.createDirectory(at: child, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let model = FileBrowserModel()
+        model.navigate(root.path)
+        let suite = "GhosttyCN-Path-Editor-" + UUID().uuidString
+        let preferences = try #require(UserDefaults(suiteName: suite))
+        defer { preferences.removePersistentDomain(forName: suite) }
+        let window = makeBrowserWindow(model: model, preferences: preferences)
+        defer { window.close(); model.disconnect() }
+        let host = try #require(window.contentView)
+        let deadline = ContinuousClock.now + .seconds(3)
+        while model.busy, ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(10)) }
+        host.layoutSubtreeIfNeeded()
+        try await Task.sleep(for: .milliseconds(30))
+        for cancel in [true, false] {
+            // Invoke the same begin-edit action as the location button, then
+            // exercise Return/Esc through the actual native text field/editor.
+            model.beginEditingPath()
+            try await Task.sleep(for: .milliseconds(30))
+            host.layoutSubtreeIfNeeded()
+            #expect(model.isEditingPath)
+            let field = try #require(findTextField(in: host, value: model.path))
+            window.makeFirstResponder(field)
+            let editor = try #require(field.currentEditor() as? NSTextView)
+            editor.selectAll(nil)
+            editor.insertText(child.path, replacementRange: editor.selectedRange())
+            let event = try #require(NSEvent.keyEvent(
+                with: .keyDown, location: .zero, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
+                windowNumber: window.windowNumber, context: nil, characters: cancel ? "\u{1b}" : "\r",
+                charactersIgnoringModifiers: cancel ? "\u{1b}" : "\r", isARepeat: false, keyCode: cancel ? 53 : 36))
+            editor.keyDown(with: event)
+            try await Task.sleep(for: .milliseconds(40))
+            while model.busy, ContinuousClock.now < deadline { try await Task.sleep(for: .milliseconds(10)) }
+            #expect(model.error == nil)
+            #expect(model.path == (cancel ? root.path : child.path))
+            host.layoutSubtreeIfNeeded()
+            #expect(!model.isEditingPath)
+        }
+    }
+
+    private func findTextField(in view: NSView, value: String) -> NSTextField? {
+        if let field = view as? NSTextField, field.isEditable, field.stringValue == value { return field }
+        return view.subviews.lazy.compactMap { findTextField(in: $0, value: value) }.first
+    }
+
+    @Test func fileButtonIconIsCenteredInsideCompactBounds() {
+        let size = FileBrowserButtonLayout.size
+        let bounds = NSRect(origin: .zero, size: size)
+        let layout = FileBrowserButtonLayout(bounds: bounds)
+        #expect(layout.icon.minX == bounds.maxX - layout.icon.maxX)
+        #expect(bounds.contains(layout.icon))
+        #expect(layout.icon.midX == bounds.midX)
+        #expect(layout.icon.midY == bounds.midY)
+        #expect(size.height == 24)
+        #expect(size.width == 28)
+    }
+
+    @Test func iconOnlyButtonTracksSidebarPositionWithoutLosingItsState() async throws {
+        let suite = "GhosttyCN-Sidebar-Icon-" + UUID().uuidString
+        let preferences = try #require(UserDefaults(suiteName: suite))
+        defer { preferences.removePersistentDomain(forName: suite) }
+        let accessory = FileBrowserTitlebarAccessory(preferences: preferences) {}
+        accessory.sync(isVisible: true)
+        #expect(accessory.button.title.isEmpty)
+        #expect(accessory.button.accessibilityLabel() == String(localized: "File Browser"))
+        #expect(accessory.symbolName == "sidebar.left")
+        preferences.set("right", forKey: FileBrowserPreferences.positionKey)
+        let deadline = ContinuousClock.now + .seconds(2)
+        while accessory.symbolName != "sidebar.right", ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(accessory.symbolName == "sidebar.right")
+        #expect(accessory.button.state == .on)
+        #expect(accessory.button.toolTip == String(localized: "Hide file browser"))
+        preferences.set("left", forKey: FileBrowserPreferences.positionKey)
+        accessory.sync(isVisible: false)
+        #expect(accessory.symbolName == "sidebar.left")
+        #expect(accessory.button.state == .off)
+    }
+
+    @Test(arguments: [false, true])
+    func fileButtonUsesTransparentAndSubtleNeutralStates(light: Bool) async throws {
+        let accessory = FileBrowserTitlebarAccessory {}
+        let background = light ? NSColor(white: 0.94, alpha: 1) : NSColor(white: 0.13, alpha: 1)
+        let host = NSView(frame: NSRect(x: 0, y: 0, width: 180, height: 60))
+        host.wantsLayer = true
+        host.layer?.backgroundColor = background.cgColor
+        let window = NSWindow(contentRect: host.frame, styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.appearance = NSAppearance(named: light ? .aqua : .darkAqua)
+        window.contentView = host
+        // The accessory's own root must remain at the origin of its AppKit container.
+        // Render its actual button separately without repositioning that protected root.
+        accessory.button.removeFromSuperview()
+        accessory.button.translatesAutoresizingMaskIntoConstraints = true
+        accessory.button.frame = NSRect(origin: NSPoint(x: 20, y: 14), size: accessory.button.fittingSize)
+        host.addSubview(accessory.button)
+        defer { window.close() }
+        var samples: [NSColor] = []
+        for visible in [false, true] {
+            accessory.sync(isVisible: visible)
+            host.layoutSubtreeIfNeeded()
+            try await Task.sleep(for: .milliseconds(20))
+            let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+            host.cacheDisplay(in: host.bounds, to: bitmap)
+            let png = try #require(bitmap.representation(using: .png, properties: [:]))
+            try png.write(to: URL(fileURLWithPath: "/private/tmp/ghosttycn-file-button-\(light ? "light" : "dark")-\(visible ? "on" : "off").png"))
+            let point = accessory.button.convert(NSPoint(x: 8, y: 4), to: host)
+            let scale = CGFloat(bitmap.pixelsWide) / host.bounds.width
+            let pixel = try #require(bitmap.colorAt(x: Int(point.x * scale), y: Int((host.bounds.height - point.y) * scale)))
+            let rgb = try #require(pixel.usingColorSpace(.deviceRGB))
+            #expect(abs(rgb.redComponent - rgb.blueComponent) < 0.04, "Selection must be neutral, not accent blue")
+            if !visible {
+                let outside = try #require(bitmap.colorAt(x: 5, y: 5))
+                #expect(pixel.distance(to: outside) < 0.03, "Inactive button should have no background")
+            }
+            samples.append(pixel)
+        }
+        #expect(samples[0].distance(to: samples[1]) > 0.02, "Selected button must remain distinguishable")
+        // distance() weights the RGB channels, so a 10% neutral shift has distance 0.3.
+        #expect(samples[0].distance(to: samples[1]) < 0.3, "Selected button should have only a subtle tint")
+    }
+
+    @Test func titlebarButtonRemainsAvailableWhenTheSidebarCloses() throws {
+        var visible = false
+        var clicks = 0
+        let accessory = FileBrowserTitlebarAccessory { visible.toggle(); clicks += 1 }
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 500),
+                              styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.addTitlebarAccessoryViewController(accessory)
+        defer { window.close() }
+        accessory.sync(isVisible: false)
+        #expect(accessory.button.state == .off)
+        #expect(accessory.button.toolTip == String(localized: "Show file browser"))
+        accessory.button.performClick(nil)
+        accessory.sync(isVisible: visible)
+        #expect(visible && clicks == 1)
+        #expect(accessory.button.state == .on)
+        #expect(accessory.button.toolTip == String(localized: "Hide file browser"))
+        accessory.button.performClick(nil)
+        accessory.sync(isVisible: visible)
+        #expect(!visible && clicks == 2)
+        #expect(!accessory.view.isHidden && !accessory.button.isHidden)
+        #expect(window.titlebarAccessoryViewControllers.contains { $0 === accessory })
+    }
+
+    @Test(arguments: [false, true])
+    func titlebarTabsReserveSpaceForThePersistentFileButton(tabsInTitlebar: Bool) async throws {
+        func makeWindow(_ title: String) -> TerminalWindow {
+            let rect = NSRect(x: 0, y: 0, width: 1100, height: 500)
+            let style: NSWindow.StyleMask = [.titled, .closable, .resizable]
+            let window: TerminalWindow
+            if tabsInTitlebar {
+                if #available(macOS 26.0, *) {
+                    window = TitlebarTabsTahoeTerminalWindow(contentRect: rect, styleMask: style, backing: .buffered, defer: false)
+                } else {
+                    window = TitlebarTabsVenturaTerminalWindow(contentRect: rect, styleMask: style, backing: .buffered, defer: false)
+                }
+            } else {
+                window = TerminalWindow(contentRect: rect, styleMask: style, backing: .buffered, defer: false)
+            }
+            window.isReleasedWhenClosed = false
+            window.awakeFromNib()
+            window.title = title
+            window.appearance = NSAppearance(named: .darkAqua)
+            window.backgroundColor = NSColor(white: 0.14, alpha: 1)
+            window.titlebarAppearsTransparent = true
+            window.contentView = NSHostingView(rootView:
+                Color(nsColor: window.backgroundColor)
+                    .overlay(Text(verbatim: "❯  cd ~/Projects\n❯  ")
+                        .font(.system(size: 13, design: .monospaced)).padding(16), alignment: .topLeading)
+                    .environment(\.colorScheme, .dark))
+            return window
+        }
+        let first = makeWindow("project — zsh")
+        let second = makeWindow("server — ssh")
+        let third = makeWindow("logs — zsh")
+        defer { first.close(); second.close(); third.close() }
+        first.fileBrowserAccessory.sync(isVisible: true)
+        try await Task.sleep(for: .milliseconds(80))
+        try checkTitlebarSpacing(first)
+        try saveTitlebarWindow(first, name: tabsInTitlebar ? "tabs-single" : "native-single")
+        first.addTabbedWindow(second, ordered: .above)
+        first.addTabbedWindow(third, ordered: .above)
+        for selected in [first, second, third, first] {
+            first.tabGroup?.selectedWindow = selected
+            for width in [CGFloat(1100), 650] {
+                selected.setContentSize(NSSize(width: width, height: 500))
+                try await Task.sleep(for: .milliseconds(80))
+                (selected as? TitlebarTabsTahoeTerminalWindow)?.setupTabBar()
+                selected.contentView?.superview?.layoutSubtreeIfNeeded()
+                let accessory = selected.fileBrowserAccessory
+                #expect(selected.fileBrowserTitlebarWidth == FileBrowserButtonLayout.size.width + FileBrowserTitlebarAccessory.outerInset * 2)
+                let button = accessory.button.convert(accessory.button.bounds, to: nil)
+                #expect(button.maxX <= selected.frame.width)
+                #expect(button.maxX >= selected.frame.width - 40)
+                try checkTitlebarSpacing(selected)
+                if tabsInTitlebar {
+                    let tabs = try #require(selected.tabBarView)
+                    let tabFrame = tabs.convert(tabs.bounds, to: nil)
+                    let actionFrame = accessory.view.convert(accessory.view.bounds, to: nil)
+                    #expect(tabFrame.maxX <= actionFrame.minX + 1, "Tabs must not cover the file action")
+                    #expect(tabFrame.width > 150)
+                    if let newTab = selected.titlebarView?.firstDescendant(withClassName: "NSTabBarNewTabButton") {
+                        let plus = newTab.convert(newTab.bounds, to: nil)
+                        #expect(abs(plus.midY - button.midY) <= 2, "File and new-tab controls should share a vertical center")
+                    }
+                }
+            }
+        }
+        try saveTitlebarWindow(first, name: tabsInTitlebar ? "tabs-multiple" : "native-multiple")
+    }
+
+    private func checkTitlebarSpacing(_ window: TerminalWindow) throws {
+        window.layoutIfNeeded()
+        window.contentView?.superview?.layoutSubtreeIfNeeded()
+        window.fileBrowserAccessory.view.layoutSubtreeIfNeeded()
+        let close = try #require(window.standardWindowButton(.closeButton))
+        let controls = close.convert(close.bounds, to: nil)
+        let button = window.fileBrowserAccessory.button
+        let frame = button.convert(button.bounds, to: nil)
+        // A native tab group may add another row below the titlebar. Align to
+        // the actual window controls, not the combined container's midpoint.
+        #expect(abs(frame.midY - controls.midY) <= 1,
+                "\(type(of: window)): button \(frame), controls \(controls), accessory \(window.fileBrowserAccessory.view.frame)")
+        #expect(window.frame.height - frame.maxY >= 4)
+        let rowBottom = controls.midY - (window.frame.height - controls.midY)
+        #expect(frame.minY - rowBottom >= 4)
+        #expect(abs(window.frame.width - frame.maxX - 12) <= 1)
+        #expect(frame.height == 24)
+        #expect(button.font?.pointSize == 13)
+    }
+
+    private func saveTitlebarWindow(_ window: TerminalWindow, name: String) throws {
+        let frame = try #require(window.contentView?.superview)
+        frame.layoutSubtreeIfNeeded()
+        let bitmap = try #require(frame.bitmapImageRepForCachingDisplay(in: frame.bounds))
+        frame.cacheDisplay(in: frame.bounds, to: bitmap)
+        let png = try #require(bitmap.representation(using: .png, properties: [:]))
+        try png.write(to: URL(fileURLWithPath: "/private/tmp/ghosttycn-titlebar-\(name).png"))
+    }
+
     @Test func hiddenFilePreferenceIsSharedAndRestoredByNewSidebars() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("GhosttyCN-Hidden-Preference-" + UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
@@ -101,7 +347,7 @@ struct FileBrowserLayoutTests {
     }
 
     private func makeBrowserWindow(model: FileBrowserModel, preferences: UserDefaults) -> NSWindow {
-        let host = NSHostingView(rootView: FileBrowserView(model: model, close: {}, preferences: preferences).frame(width: 320, height: 400))
+        let host = NSHostingView(rootView: FileBrowserView(model: model, preferences: preferences).frame(width: 320, height: 400))
         host.frame = NSRect(x: 0, y: 0, width: 320, height: 400)
         let window = NSWindow(contentRect: host.frame, styleMask: .borderless, backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -120,7 +366,7 @@ struct FileBrowserLayoutTests {
         let model = FileBrowserModel()
         defer { model.disconnect() }
         model.navigate(root.path)
-        let host = NSHostingView(rootView: FileBrowserView(model: model, close: {}).frame(width: 320, height: 400))
+        let host = NSHostingView(rootView: FileBrowserView(model: model).frame(width: 320, height: 400))
         host.frame = NSRect(x: 0, y: 0, width: 320, height: 400)
         let window = NSWindow(contentRect: host.frame, styleMask: .borderless, backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -132,6 +378,7 @@ struct FileBrowserLayoutTests {
         try await Task.sleep(for: .milliseconds(50))
         let table = try #require(findTable(in: host))
         #expect(table.numberOfRows == 3)
+        #expect((24...26).contains(table.rect(ofRow: 0).height))
         window.makeFirstResponder(table)
         // The same native selection notification used by mouse row selection.
         table.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
@@ -139,7 +386,7 @@ struct FileBrowserLayoutTests {
         #expect(model.selectedFileID == model.visibleFiles[0].id)
         let row = try #require(table.rowView(atRow: 0, makeIfNecessary: true))
         #expect(row.isSelected)
-        #expect(row.selectionHighlightStyle != .none)
+        #expect(row.selectionHighlightStyle == .none) // SwiftUI paints a subtle neutral selection instead.
         let down = try #require(NSEvent.keyEvent(
             with: .keyDown, location: .zero, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
             windowNumber: window.windowNumber, context: nil, characters: "\u{F701}",
@@ -240,7 +487,7 @@ struct FileBrowserLayoutTests {
         let background = light ? Color(red: 0.97, green: 0.95, blue: 0.91) : Color(red: 0.15, green: 0.11, blue: 0.18)
         let view = FileBrowserSplitLayout(
             isVisible: true, position: light ? "right" : "left", preferredWidth: .constant(320),
-            sidebar: FileBrowserView(model: model, close: {}).background(background),
+            sidebar: FileBrowserView(model: model).background(background),
             terminal: background.overlay(Text(verbatim: "❯  cd ~/Projects\n❯  ").font(.system(.body, design: .monospaced)).padding(), alignment: .topLeading))
             .environment(\.locale, Locale(identifier: "zh-Hans"))
             .environment(\.colorScheme, light ? .light : .dark)

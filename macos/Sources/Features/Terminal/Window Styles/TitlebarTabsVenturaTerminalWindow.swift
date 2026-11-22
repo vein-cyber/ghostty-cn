@@ -384,7 +384,8 @@ class TitlebarTabsVenturaTerminalWindow: TerminalWindow {
 
             accessoryClipView.translatesAutoresizingMaskIntoConstraints = false
             accessoryClipView.leftAnchor.constraint(equalTo: windowButtonsBackdrop.rightAnchor).isActive = true
-            accessoryClipView.rightAnchor.constraint(equalTo: toolbarView.rightAnchor).isActive = true
+            accessoryClipView.rightAnchor.constraint(equalTo: toolbarView.rightAnchor,
+                                                     constant: -(self?.fileBrowserTitlebarWidth ?? 0)).isActive = true
             accessoryClipView.topAnchor.constraint(equalTo: toolbarView.topAnchor).isActive = true
             accessoryClipView.heightAnchor.constraint(equalTo: toolbarView.heightAnchor).isActive = true
             accessoryClipView.needsLayout = true

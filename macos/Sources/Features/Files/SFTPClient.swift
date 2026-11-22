@@ -32,6 +32,15 @@ actor SFTPClient {
         return try response.string()
     }
 
+    /// REALPATH follows relative/absolute link chains on the server, never on the local Mac.
+    func resolve(_ path: String) throws -> BrowserFile {
+        let canonical = try realpath(path)
+        guard canonical.hasPrefix("/") else { throw FileBrowserError.protocolError }
+        var response = try request(7) { $0.putString(canonical) } // LSTAT the resolved target
+        try expect(105, response: &response)
+        return try response.attributes(path: canonical, name: (canonical as NSString).lastPathComponent)
+    }
+
     func list(_ path: String) throws -> [BrowserFile] {
         let directory = try handle(11) { $0.putString(path) }
         defer { try? close(directory) }
@@ -136,13 +145,13 @@ actor SFTPClient {
     }
 
     private func openRegular(_ path: String) throws -> Data {
-        // OPEN + FSTAT checks the opened object too, protecting against stale listings.
-        var info = try request(7) { $0.putString(path) } // LSTAT
-        try expect(105, response: &info)
-        guard try info.attributes(path: path, name: "").kind == .file else {
+        // Resolve links deliberately for reads. Mutations still use the original link path.
+        // OPEN + FSTAT also checks the actual opened object, not only a stale listing.
+        let target = try resolve(path)
+        guard target.kind == .file else {
             throw FileBrowserError.notRegularFile
         }
-        let file = try handle(3) { $0.putString(path); $0.put(1); $0.put(0) }
+        let file = try handle(3) { $0.putString(target.path); $0.put(1); $0.put(0) }
         do {
             var attributes = try request(8) { $0.putBytes(file) }
             try expect(105, response: &attributes)

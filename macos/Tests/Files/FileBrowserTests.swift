@@ -1,8 +1,68 @@
 import Foundation
+import Darwin
 import Testing
 @testable import Ghostty
 
 struct FileBrowserTests {
+    @Test func directoryTitlesAndHomeAbbreviationsRespectPathBoundaries() {
+        let home = "/Users/demo"
+        let root = FileBrowserLocation(path: home + "/", homeDirectory: home)
+        #expect(root.isHome)
+        #expect(root.title == String(localized: "Home folder"))
+        #expect(root.displayPath == "~")
+        let project = FileBrowserLocation(path: home + "/Projects/ghostty-cn", homeDirectory: home)
+        #expect(project.title == "ghostty-cn")
+        #expect(project.displayPath == "~/Projects/ghostty-cn")
+        #expect(project.expandingHome(in: "~/Projects") == home + "/Projects")
+        #expect(project.expandingHome(in: "~") == home)
+        #expect(project.expandingHome(in: "~other") == "~other")
+        let neighbor = FileBrowserLocation(path: "/Users/demo-other", homeDirectory: home)
+        #expect(neighbor.displayPath == "/Users/demo-other")
+        #expect(!neighbor.isHome)
+        let system = FileBrowserLocation(path: "/var/log", homeDirectory: home)
+        #expect(system.title == "log")
+        #expect(system.displayPath == "/var/log")
+        #expect(FileBrowserLocation(path: "/", homeDirectory: home).title == String(localized: "Root folder"))
+        #expect(FileBrowserLocation(path: ".", homeDirectory: nil).title == String(localized: "Files"))
+        #expect(FileBrowserLocation(path: "/etc", homeDirectory: "/").displayPath == "~/etc")
+    }
+
+    @Test func onlyRegularFilesDisplayTheirSize() {
+        for kind: BrowserFile.Kind in [.directory, .symbolicLink, .other] {
+            #expect(BrowserFile(path: "/example", name: "example", kind: kind, size: 54).displayedSize == nil)
+        }
+        #expect(BrowserFile(path: "/example.txt", name: "example.txt", kind: .file, size: 89).displayedSize != nil)
+    }
+
+    @MainActor @Test func remoteHomeAndDirectoryTitleFollowTheRemoteSessionOnly() async throws {
+        let root = try temporaryFolder()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let project = root.appendingPathComponent("Projects")
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: false)
+        let model = FileBrowserModel { _ in
+            SFTPClient(transport: try SFTPTransport(executable: "/usr/libexec/sftp-server", arguments: ["-d", root.path]))
+        }
+        defer { model.disconnect() }
+        model.observeTerminal(.ssh(SSHFileConnection(host: "fixture-host")), directory: nil)
+        try await waitForIdle(model)
+        #expect(model.remoteHome == model.path)
+        #expect(model.location.title == String(localized: "Home folder"))
+        #expect(model.location.displayPath == "~")
+        model.navigate("~/Projects")
+        try await waitForIdle(model)
+        #expect(model.error == nil)
+        #expect(model.location.title == "Projects")
+        #expect(model.location.displayPath == "~/Projects")
+        #expect(model.remoteHost == "fixture-host")
+        model.navigate("~")
+        try await waitForIdle(model)
+        #expect(model.location.title == String(localized: "Home folder"))
+        model.disconnect()
+        #expect(model.remoteHome == nil)
+        #expect(model.remoteHost == nil)
+        #expect(model.location.homeDirectory == FileManager.default.homeDirectoryForCurrentUser.path)
+    }
+
     @MainActor @Test func primaryActionPreviewsFilesAndIgnoresMissingOrHiddenItems() async throws {
         let root = try temporaryFolder()
         defer { try? FileManager.default.removeItem(at: root) }
@@ -131,7 +191,7 @@ struct FileBrowserTests {
         #expect(listing.first?.name == "folder")
         #expect(listing.first(where: { $0.name == "link" })?.kind == .symbolicLink)
         #expect(try await local.preview(file.path) == Data("hello 世界".utf8))
-        await #expect(throws: (any Error).self) { try await local.preview(link.path) }
+        #expect(try await local.preview(link.path) == Data("hello 世界".utf8))
         let renamed = root.appendingPathComponent("renamed")
         try await local.rename(file.path, to: renamed.path)
         #expect(FileManager.default.fileExists(atPath: renamed.path))
@@ -190,7 +250,7 @@ struct FileBrowserTests {
         await #expect(throws: (any Error).self) { try await client.list(canonical) }
     }
 
-    @Test func sftpRejectsLinksAndBoundsPreview() async throws {
+    @Test func sftpFollowsFileLinksAndBoundsPreview() async throws {
         let root = try temporaryFolder()
         defer { try? FileManager.default.removeItem(at: root) }
         let file = root.appendingPathComponent("big.txt")
@@ -202,7 +262,94 @@ struct FileBrowserTests {
         defer { client.cancel() }
         _ = try await client.start()
         #expect(try await client.preview(file.path).count == 262_144)
-        await #expect(throws: (any Error).self) { try await client.preview(link.path) }
+        #expect(try await client.preview(link.path).count == 262_144)
+        let destination = root.appendingPathComponent("download.txt")
+        try await client.download(link.path, to: destination, progress: { _ in })
+        #expect(try Data(contentsOf: destination).count == 300_000)
+    }
+
+    @MainActor @Test(arguments: [false, true])
+    func primaryActionFollowsDirectoryAndFileLinks(remote: Bool) async throws {
+        let root = try temporaryFolder()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let folder = root.appendingPathComponent("folder")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+        try Data("linked text".utf8).write(to: folder.appendingPathComponent("file.txt"))
+        try FileManager.default.createSymbolicLink(atPath: root.appendingPathComponent("folder-link").path, withDestinationPath: "folder")
+        try FileManager.default.createSymbolicLink(atPath: root.appendingPathComponent("chain").path, withDestinationPath: "folder-link")
+        try FileManager.default.createSymbolicLink(atPath: root.appendingPathComponent("file-link").path, withDestinationPath: "chain/file.txt")
+        let model = FileBrowserModel { _ in
+            SFTPClient(transport: try SFTPTransport(executable: "/usr/libexec/sftp-server", arguments: ["-d", root.path]))
+        }
+        defer { model.disconnect() }
+        if remote {
+            model.observeTerminal(.ssh(SSHFileConnection(host: "test-host")), directory: nil)
+        } else { model.follow(root) }
+        try await waitForIdle(model)
+        let canonicalRoot = model.path
+        let link = try #require(model.files.first { $0.name == "chain" })
+        #expect(link.kind == .symbolicLink)
+        model.activateFiles([link.id])
+        try await waitForIdle(model)
+        #expect(model.error == nil)
+        #expect(URL(fileURLWithPath: model.path).resolvingSymlinksInPath() == folder.resolvingSymlinksInPath())
+        #expect(model.files.map(\.name) == ["file.txt"])
+        #expect(model.preview == nil)
+        // The unchanged terminal report must not snap back after opening a directory link.
+        if !remote { model.follow(root); #expect(!model.busy) }
+        model.navigate(canonicalRoot)
+        try await waitForIdle(model)
+        let file = try #require(model.files.first { $0.name == "file-link" })
+        model.activateFiles([file.id])
+        try await waitForIdle(model)
+        #expect(model.error == nil)
+        #expect(model.preview?.name == "file-link")
+        #expect(model.preview?.text == "linked text")
+    }
+
+    @Test(arguments: [false, true])
+    func brokenCyclicAndSpecialFileLinksFailWithoutHanging(remote: Bool) async throws {
+        let root = try temporaryFolder()
+        defer { try? FileManager.default.removeItem(at: root) }
+        for (name, target) in [("broken", "missing"), ("loop-a", "loop-b"), ("loop-b", "loop-a"), ("pipe-link", "pipe")] {
+            try FileManager.default.createSymbolicLink(atPath: root.appendingPathComponent(name).path, withDestinationPath: target)
+        }
+        #expect(mkfifo(root.appendingPathComponent("pipe").path, 0o600) == 0)
+        let local = LocalFileBrowser()
+        let client = SFTPClient(transport: try SFTPTransport(executable: "/usr/libexec/sftp-server", arguments: [], timeout: 2))
+        defer { client.cancel() }
+        _ = try await client.start()
+        let start = ContinuousClock.now
+        for name in ["broken", "loop-a", "pipe-link"] {
+            let path = root.appendingPathComponent(name).path
+            await #expect(throws: (any Error).self) {
+                if remote { _ = try await client.preview(path) } else { _ = try await local.preview(path) }
+            }
+        }
+        #expect(ContinuousClock.now - start < .seconds(3))
+        let entries = try await local.list(root.path)
+        #expect(entries.count == 5) // Failure must not hide or delete broken links.
+    }
+
+    @Test func sftpMutatesLinksWithoutChangingTheirTargets() async throws {
+        let root = try temporaryFolder()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let folder = root.appendingPathComponent("target")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+        let content = folder.appendingPathComponent("keep.txt")
+        try Data("keep".utf8).write(to: content)
+        let link = root.appendingPathComponent("link")
+        try FileManager.default.createSymbolicLink(at: link, withDestinationURL: folder)
+        let client = SFTPClient(transport: try SFTPTransport(executable: "/usr/libexec/sftp-server", arguments: []))
+        defer { client.cancel() }
+        _ = try await client.start()
+        let renamed = root.appendingPathComponent("renamed-link")
+        try await client.rename(link.path, to: renamed.path)
+        let entry = try #require(try await client.list(root.path).first { $0.name == "renamed-link" })
+        #expect(entry.kind == .symbolicLink)
+        try await client.remove(entry)
+        #expect(try Data(contentsOf: content) == Data("keep".utf8))
+        #expect(!FileManager.default.fileExists(atPath: renamed.path))
     }
 
     @Test func stalledConnectionsCanBeCancelledAndTimeOut() async throws {

@@ -135,10 +135,14 @@ struct TerminalView<ViewModel: TerminalViewModel>: View {
     }
 
     private var fileBrowserPane: some View {
-        let browser = FileBrowserView(model: fileBrowser) {
+        let controller = viewModel as? BaseTerminalController
+        let hasTitlebarAction = (controller?.window as? TerminalWindow).map {
+            $0.supportsFileBrowserAccessory && $0.styleMask.contains(.titled)
+        } ?? false
+        let browser = FileBrowserView(model: fileBrowser, closeWithoutTitlebar: hasTitlebarAction ? nil : {
             viewModel.fileBrowserIsShowing = false
             if let surface = lastFocusedSurface?.value { surface.window?.makeFirstResponder(surface) }
-        }
+        })
         return Group {
             if let surface = lastFocusedSurface?.value ?? focusedSurface {
                 browser.modifier(FileBrowserSurfaceAppearance(surface: surface, forceOpaque: viewModel.isBackgroundOpaque))

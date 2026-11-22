@@ -25,6 +25,17 @@ class TerminalWindow: NSWindow {
     /// Update notification UI in titlebar
     private let updateAccessory = NSTitlebarAccessoryViewController()
 
+    private(set) lazy var fileBrowserAccessory = FileBrowserTitlebarAccessory { [weak self] in
+        (self?.windowController as? BaseTerminalController)?.toggleFileBrowser(self)
+    }
+
+    /// Our tab styles manually lay tabs over the toolbar. Leave the persistent action unobstructed.
+    var fileBrowserTitlebarWidth: CGFloat {
+        titlebarAccessoryViewControllers.contains(where: { $0 === fileBrowserAccessory }) ? fileBrowserAccessory.view.frame.width : 0
+    }
+
+    var supportsFileBrowserAccessory: Bool { true }
+
     /// Visual indicator that mirrors the selected tab color.
     private lazy var tabColorIndicator: NSHostingView<TabColorIndicatorView> = {
         let view = NSHostingView(rootView: TabColorIndicatorView(tabColor: tabColor))
@@ -134,6 +145,10 @@ class TerminalWindow: NSWindow {
         // Create our reset zoom titlebar accessory. We have to have a title
         // to do this or AppKit triggers an assertion.
         if styleMask.contains(.titled) {
+            // The first right-hand accessory is the rightmost one, even with native tabs.
+            if supportsFileBrowserAccessory {
+                addTitlebarAccessoryViewController(fileBrowserAccessory)
+            }
             resetZoomAccessory.layoutAttribute = .right
             resetZoomAccessory.view = NSHostingView(rootView: ResetZoomAccessoryView(
                 viewModel: viewModel,

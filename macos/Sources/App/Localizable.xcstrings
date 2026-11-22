@@ -239,6 +239,50 @@
         }
       }
     },
+    "Home folder": {
+      "comment": "File sidebar title when browsing the local or remote user's home directory",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "主目录"
+          }
+        }
+      }
+    },
+    "Root folder": {
+      "comment": "File sidebar title for the filesystem root /",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "根目录"
+          }
+        }
+      }
+    },
+    "Click to edit the folder path": {
+      "comment": "Accessibility hint for the compact file sidebar location button",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击编辑文件夹路径"
+          }
+        }
+      }
+    },
+    "File browser options": {
+      "comment": "Accessibility label for the file sidebar's more-options menu",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文件管理选项"
+          }
+        }
+      }
+    },
     "Files": {
       "comment": "Native file browser",
       "localizations": {
@@ -389,6 +433,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "上传文件"
+          }
+        }
+      }
+    },
+    "Show file browser": {
+      "comment": "Persistent titlebar button: open the terminal file sidebar",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示文件管理"
+          }
+        }
+      }
+    },
+    "Open linked item": {
+      "comment": "Open a symbolic link: browse its target folder or preview its target file",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开链接目标"
           }
         }
       }
@@ -591,13 +657,13 @@
         }
       }
     },
-    "Only regular files can be previewed or transferred. Symbolic links are not followed.": {
+    "Only regular files can be previewed or transferred.": {
       "comment": "Native file browser",
       "localizations": {
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "只能预览或传输普通文件，不会跟随符号链接。"
+            "value": "只能预览或传输普通文件。"
           }
         }
       }

@@ -1,6 +1,44 @@
 import AppKit
 import SwiftUI
 
+enum FileBrowserSelection {
+    static let opacity = 0.08
+    static let pressedOpacity = 0.12
+}
+
+/// Only the file list opts out of the system's bright accent selection. Native
+/// selection, keyboard navigation, accessibility and context menus stay intact.
+struct FileBrowserRowSelectionStyle: NSViewRepresentable {
+    func makeNSView(context: Context) -> Observer { Observer() }
+    func updateNSView(_ view: Observer, context: Context) { view.scheduleUpdate() }
+
+    final class Observer: NSView {
+        private var scheduled = false
+
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+        override func viewDidMoveToSuperview() { super.viewDidMoveToSuperview(); scheduleUpdate() }
+        override func viewDidMoveToWindow() { super.viewDidMoveToWindow(); scheduleUpdate() }
+
+        func scheduleUpdate() {
+            guard !scheduled else { return }
+            scheduled = true
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                scheduled = false
+                var ancestor = superview
+                while let view = ancestor {
+                    if let table = view as? NSTableView {
+                        if table.selectionHighlightStyle != .none { table.selectionHighlightStyle = .none }
+                        return
+                    }
+                    ancestor = view.superview
+                }
+            }
+        }
+    }
+}
+
 struct FileBrowserAppearance {
     let background: NSColor
     let colorScheme: ColorScheme

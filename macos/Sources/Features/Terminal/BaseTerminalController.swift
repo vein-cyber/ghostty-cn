@@ -56,7 +56,9 @@ class BaseTerminalController: NSWindowController,
     /// This can be set to show/hide the command palette.
     @Published var commandPaletteIsShowing: Bool = false
 
-    @Published var fileBrowserIsShowing: Bool = FileBrowserPreferences.initiallyVisible()
+    @Published var fileBrowserIsShowing: Bool = FileBrowserPreferences.initiallyVisible() {
+        didSet { (window as? TerminalWindow)?.fileBrowserAccessory.sync(isVisible: fileBrowserIsShowing) }
+    }
 
     /// Set if the terminal view should show the update overlay.
     @Published var updateOverlayIsVisible: Bool = false
@@ -1172,6 +1174,7 @@ class BaseTerminalController: NSWindowController,
 
         // Set our update overlay state
         updateOverlayIsVisible = defaultUpdateOverlayVisibility()
+        (window as? TerminalWindow)?.fileBrowserAccessory.sync(isVisible: fileBrowserIsShowing)
     }
 
     func defaultUpdateOverlayVisibility() -> Bool {

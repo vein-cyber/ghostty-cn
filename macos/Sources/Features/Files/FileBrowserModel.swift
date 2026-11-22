@@ -14,10 +14,15 @@ final class FileBrowserModel: ObservableObject {
         didSet { reconcileSelection() }
     }
     @Published private(set) var path = FileManager.default.homeDirectoryForCurrentUser.path {
-        didSet { if path != oldValue { selectedFileID = nil } }
+        didSet { if path != oldValue { selectedFileID = nil; cancelEditingPath() } }
     }
+    @Published private(set) var isEditingPath = false
+    @Published var pathDraft = ""
     @Published var selectedFileID: BrowserFile.ID?
-    @Published private(set) var remoteHost: String?
+    @Published private(set) var remoteHost: String? {
+        didSet { if remoteHost != oldValue { cancelEditingPath() } }
+    }
+    @Published private(set) var remoteHome: String?
     @Published private(set) var busy = false
     @Published private(set) var transferred: UInt64?
     @Published var error: String?
@@ -45,6 +50,10 @@ final class FileBrowserModel: ObservableObject {
 
     var canFollowRemoteDirectory: Bool { automaticConnection && remote != nil }
 
+    var location: FileBrowserLocation {
+        FileBrowserLocation(path: path, homeDirectory: remoteHost == nil ? FileManager.default.homeDirectoryForCurrentUser.path : remoteHome)
+    }
+
     enum RemoteFolderStatus: Equatable {
         case unavailable, awaitingReport, following
     }
@@ -68,6 +77,24 @@ final class FileBrowserModel: ObservableObject {
 
     var canBrowse: Bool { !blocksLocalFiles && (remoteHost == nil || remote != nil) }
     var canRefresh: Bool { !busy && terminalSSH != .unsupported }
+
+    func beginEditingPath() {
+        guard !busy, canBrowse else { return }
+        pathDraft = path
+        isEditingPath = true
+    }
+
+    func cancelEditingPath() {
+        isEditingPath = false
+        pathDraft = path
+    }
+
+    func submitPath() {
+        guard isEditingPath, !busy, canBrowse else { return }
+        let destination = pathDraft
+        cancelEditingPath()
+        navigate(destination)
+    }
 
     func observeTerminal(
         _ context: TerminalSSHContext, directory: URL?,
@@ -145,29 +172,32 @@ final class FileBrowserModel: ObservableObject {
 
     func navigate(_ destination: String, manual: Bool = true) {
         guard !busy, canBrowse else { return }
-        if manual {
-            // Consume the current report, not the following feature itself.
-            // Browsing stays put until the terminal actually changes directory.
-            lastAttemptedLocalDirectory = terminalDirectory
-            lastAttemptedRemoteDirectory = remoteDirectory?.path
-        }
+        if manual { consumeDirectoryReport() }
         let remote = remote
-        execute {
-            let resolved: String
-            let entries: [BrowserFile]
-            if let remote {
-                resolved = try await remote.realpath(destination)
-                entries = try await remote.list(resolved)
-            } else {
-                resolved = (destination as NSString).expandingTildeInPath
-                guard resolved.hasPrefix("/") else { throw FileBrowserError.invalidName }
-                entries = try await self.local.list(resolved)
-            }
-            try Task.checkCancellation()
-            self.path = resolved
-            self.files = entries
-            self.filter = ""
+        execute { try await self.loadDirectory(destination, remote: remote) }
+    }
+
+    private func consumeDirectoryReport() {
+        // Manual browsing stays put until the terminal actually changes directory.
+        lastAttemptedLocalDirectory = terminalDirectory
+        lastAttemptedRemoteDirectory = remoteDirectory?.path
+    }
+
+    private func loadDirectory(_ destination: String, remote: SFTPClient?) async throws {
+        let resolved: String
+        let entries: [BrowserFile]
+        if let remote {
+            resolved = try await remote.realpath(location.expandingHome(in: destination))
+            entries = try await remote.list(resolved)
+        } else {
+            resolved = (destination as NSString).expandingTildeInPath
+            guard resolved.hasPrefix("/") else { throw FileBrowserError.invalidName }
+            entries = try await local.list(resolved)
         }
+        try Task.checkCancellation()
+        path = resolved
+        files = entries
+        filter = ""
     }
 
     /// Remote browsing is only derived from the focused terminal's SSH context.
@@ -179,6 +209,7 @@ final class FileBrowserModel: ObservableObject {
             automaticConnection = true
             connectionFailed = false
             remoteHost = connection.host
+            remoteHome = nil
             lastAttemptedRemoteDirectory = nil
             files = []
             path = "."
@@ -189,6 +220,7 @@ final class FileBrowserModel: ObservableObject {
                     let directory = try await client.start()
                     let entries = try await client.list(directory)
                     try Task.checkCancellation()
+                    self.remoteHome = directory
                     self.path = directory
                     self.files = entries
                 } catch {
@@ -207,6 +239,7 @@ final class FileBrowserModel: ObservableObject {
         remote?.cancel()
         remote = nil
         remoteHost = nil
+        remoteHome = nil
         automaticConnection = false
         connectionFailed = false
         appliedContext = nil
@@ -244,14 +277,25 @@ final class FileBrowserModel: ObservableObject {
     }
 
     func showPreview(_ file: BrowserFile) {
+        guard !busy, canBrowse else { return }
         if file.isDirectory { navigate(file.path); return }
         let remote = remote
+        if file.kind == .symbolicLink { consumeDirectoryReport() }
         execute {
-            guard file.kind == .file else { throw FileBrowserError.notRegularFile }
-            let data: Data
-            if let remote { data = try await remote.preview(file.path) } else { data = try await self.local.preview(file.path) }
+            let target: BrowserFile
+            if file.kind == .symbolicLink {
+                if let remote { target = try await remote.resolve(file.path) } else { target = try await self.local.resolve(file.path) }
+            } else { target = file }
             try Task.checkCancellation()
-            self.preview = Preview(name: file.name, text: BrowserPath.preview(data), truncated: file.size > UInt64(data.count))
+            if target.isDirectory {
+                try await self.loadDirectory(target.path, remote: remote)
+                return
+            }
+            guard target.kind == .file else { throw FileBrowserError.notRegularFile }
+            let data: Data
+            if let remote { data = try await remote.preview(target.path) } else { data = try await self.local.preview(target.path) }
+            try Task.checkCancellation()
+            self.preview = Preview(name: file.name, text: BrowserPath.preview(data), truncated: target.size > UInt64(data.count))
         }
     }
 

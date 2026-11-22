@@ -8,6 +8,10 @@ struct BrowserFile: Identifiable, Hashable, Sendable {
     let size: UInt64
     var id: String { path }
     var isDirectory: Bool { kind == .directory }
+    var displayedSize: String? {
+        guard kind == .file else { return nil }
+        return ByteCountFormatter.string(fromByteCount: Int64(clamping: size), countStyle: .file)
+    }
 
     static func sorted(_ files: [Self]) -> [Self] {
         files.sorted {
@@ -28,7 +32,7 @@ enum FileBrowserError: LocalizedError {
         case .protocolError: return String(localized: "The server returned an invalid SFTP response.")
         case .disconnected: return String(localized: "The terminal file connection is closed. Use Refresh to try again.")
         case .timeout: return String(localized: "The file operation timed out. Use Refresh before trying again.")
-        case .notRegularFile: return String(localized: "Only regular files can be previewed or transferred. Symbolic links are not followed.")
+        case .notRegularFile: return String(localized: "Only regular files can be previewed or transferred.")
         case .tooManyFiles: return String(localized: "This folder has too many entries to display safely.")
         case .server(let detail): return String(localized: "File operation failed:") + "\n" + detail
         }
@@ -69,6 +73,24 @@ enum BrowserPath {
 
 /// Blocking filesystem work stays off the UI executor. No terminal commands are executed.
 actor LocalFileBrowser {
+    /// Resolve on activation, not listing: broken links remain visible and can be renamed/removed.
+    func resolve(_ path: String) throws -> BrowserFile {
+        guard let resolved = realpath(path, nil) else {
+            throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+        }
+        defer { free(resolved) }
+        let path = String(cString: resolved)
+        let attrs = try FileManager.default.attributesOfItem(atPath: path)
+        let kind: BrowserFile.Kind
+        switch attrs[.type] as? FileAttributeType {
+        case .typeDirectory: kind = .directory
+        case .typeRegular: kind = .file
+        default: kind = .other
+        }
+        return BrowserFile(path: path, name: (path as NSString).lastPathComponent, kind: kind,
+                           size: (attrs[.size] as? NSNumber)?.uint64Value ?? 0)
+    }
+
     func list(_ path: String) throws -> [BrowserFile] {
         let urls = try FileManager.default.contentsOfDirectory(
             at: URL(fileURLWithPath: path), includingPropertiesForKeys: nil)
@@ -88,7 +110,9 @@ actor LocalFileBrowser {
     }
 
     func preview(_ path: String) throws -> Data {
-        let handle = try regularFile(path)
+        let target = try resolve(path)
+        guard target.kind == .file else { throw FileBrowserError.notRegularFile }
+        let handle = try regularFile(target.path)
         defer { try? handle.close() }
         return try handle.read(upToCount: 262_144) ?? Data()
     }
