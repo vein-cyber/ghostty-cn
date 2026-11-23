@@ -220,11 +220,6 @@ jobs:
             echo
             echo "基于 Ghostty ${{ steps.version.outputs.upstream_version }}。"
             echo
-            echo "- Ghostty main: \`${GHOSTTY_UPSTREAM_COMMIT}\`"
-            echo "- Ghostty Config main: \`${GHOSTTY_CONFIG_COMMIT}\`"
-            echo
-            echo "> v0.3.0-cn.1 是新应用身份下首个支持自动更新的版本；v0.2.x 用户需要手动安装本版本一次。"
-            echo
             if [[ -f "${curated_notes}" ]]; then
               cat "${curated_notes}"
               echo
