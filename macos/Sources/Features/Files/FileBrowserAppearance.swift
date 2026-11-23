@@ -3,7 +3,6 @@ import SwiftUI
 
 enum FileBrowserSelection {
     static let opacity = 0.08
-    static let pressedOpacity = 0.12
 }
 
 /// Only the file list opts out of the system's bright accent selection. Native

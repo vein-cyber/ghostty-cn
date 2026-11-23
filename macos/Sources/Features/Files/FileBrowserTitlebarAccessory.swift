@@ -99,11 +99,7 @@ private final class FileBrowserToggleButton: NSButton {
     override var alignmentRectInsets: NSEdgeInsets { NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0) }
 
     override func draw(_ dirtyRect: NSRect) {
-        let pressed = cell?.isHighlighted == true
-        if state == .on || pressed {
-            NSColor.labelColor.withAlphaComponent(pressed ? FileBrowserSelection.pressedOpacity : FileBrowserSelection.opacity).setFill()
-            NSBezierPath(roundedRect: bounds, xRadius: 6, yRadius: 6).fill()
-        }
+        // Always reveal the titlebar beneath the icon, including on/pressed states.
         let layout = FileBrowserButtonLayout(bounds: bounds)
         if let image, image.size.width > 0, image.size.height > 0 {
             let scale = min(layout.icon.width / image.size.width, layout.icon.height / image.size.height)

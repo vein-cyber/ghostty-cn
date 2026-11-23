@@ -90,7 +90,7 @@ struct FileBrowserLayoutTests {
     }
 
     @Test(arguments: [false, true])
-    func fileButtonUsesTransparentAndSubtleNeutralStates(light: Bool) async throws {
+    func fileButtonBackgroundRemainsTransparentInEveryState(light: Bool) async throws {
         let accessory = FileBrowserTitlebarAccessory {}
         let background = light ? NSColor(white: 0.94, alpha: 1) : NSColor(white: 0.13, alpha: 1)
         let host = NSView(frame: NSRect(x: 0, y: 0, width: 180, height: 60))
@@ -110,26 +110,28 @@ struct FileBrowserLayoutTests {
         var samples: [NSColor] = []
         for visible in [false, true] {
             accessory.sync(isVisible: visible)
-            host.layoutSubtreeIfNeeded()
-            try await Task.sleep(for: .milliseconds(20))
-            let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
-            host.cacheDisplay(in: host.bounds, to: bitmap)
-            let png = try #require(bitmap.representation(using: .png, properties: [:]))
-            try png.write(to: URL(fileURLWithPath: "/private/tmp/ghosttycn-file-button-\(light ? "light" : "dark")-\(visible ? "on" : "off").png"))
-            let point = accessory.button.convert(NSPoint(x: 8, y: 4), to: host)
-            let scale = CGFloat(bitmap.pixelsWide) / host.bounds.width
-            let pixel = try #require(bitmap.colorAt(x: Int(point.x * scale), y: Int((host.bounds.height - point.y) * scale)))
-            let rgb = try #require(pixel.usingColorSpace(.deviceRGB))
-            #expect(abs(rgb.redComponent - rgb.blueComponent) < 0.04, "Selection must be neutral, not accent blue")
-            if !visible {
+            for pressed in [false, true] {
+                accessory.button.highlight(pressed)
+                host.layoutSubtreeIfNeeded()
+                try await Task.sleep(for: .milliseconds(20))
+                let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+                host.cacheDisplay(in: host.bounds, to: bitmap)
+                let png = try #require(bitmap.representation(using: .png, properties: [:]))
+                let state = "\(visible ? "on" : "off")-\(pressed ? "pressed" : "normal")"
+                try png.write(to: URL(fileURLWithPath: "/private/tmp/ghosttycn-file-button-\(light ? "light" : "dark")-\(state).png"))
                 let outside = try #require(bitmap.colorAt(x: 5, y: 5))
-                #expect(pixel.distance(to: outside) < 0.03, "Inactive button should have no background")
+                let scale = CGFloat(bitmap.pixelsWide) / host.bounds.width
+                for sample in [NSPoint(x: 8, y: 4), NSPoint(x: 3, y: 12), NSPoint(x: 25, y: 12)] {
+                    let point = accessory.button.convert(sample, to: host)
+                    let pixel = try #require(bitmap.colorAt(x: Int(point.x * scale), y: Int((host.bounds.height - point.y) * scale)))
+                    #expect(pixel.distance(to: outside) < 0.03, "Button background must stay transparent in state \(state)")
+                    samples.append(pixel)
+                }
             }
-            samples.append(pixel)
         }
-        #expect(samples[0].distance(to: samples[1]) > 0.02, "Selected button must remain distinguishable")
-        // distance() weights the RGB channels, so a 10% neutral shift has distance 0.3.
-        #expect(samples[0].distance(to: samples[1]) < 0.3, "Selected button should have only a subtle tint")
+        for sample in samples {
+            #expect(samples[0].distance(to: sample) < 0.03, "Toggling or pressing must not change the background")
+        }
     }
 
     @Test func titlebarButtonRemainsAvailableWhenTheSidebarCloses() throws {
