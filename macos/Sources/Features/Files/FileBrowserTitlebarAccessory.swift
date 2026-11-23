@@ -2,7 +2,10 @@ import AppKit
 
 /// A window-level action, not a tab: it remains available when the sidebar is closed.
 final class FileBrowserTitlebarAccessory: NSTitlebarAccessoryViewController {
-    static let outerInset: CGFloat = 12
+    /// Keep the action clear of the native window corner; the inner gap is independent.
+    static let outerInset: CGFloat = 16
+    static let accessorySpacing: CGFloat = 12
+    static let rowHeight: CGFloat = 32
     let button: NSButton
     private let action: () -> Void
     private let preferences: UserDefaults
@@ -26,14 +29,14 @@ final class FileBrowserTitlebarAccessory: NSTitlebarAccessoryViewController {
         button.action = #selector(toggle)
         button.setAccessibilityIdentifier("fileBrowserToggle")
         button.setAccessibilityLabel(String(localized: "File Browser"))
-        let width = button.fittingSize.width + Self.outerInset * 2
+        let width = button.fittingSize.width + Self.accessorySpacing + Self.outerInset
         // AppKit sizes this transparent container to its native titlebar row.
-        view = NSView(frame: NSRect(x: 0, y: 0, width: width, height: 32))
+        view = NSView(frame: NSRect(x: 0, y: 0, width: width, height: Self.rowHeight))
         view.addSubview(button)
         button.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             button.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            button.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Self.outerInset),
+            button.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Self.accessorySpacing),
             button.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Self.outerInset),
             button.heightAnchor.constraint(equalToConstant: FileBrowserButtonLayout.height),
         ])

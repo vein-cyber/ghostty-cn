@@ -23,7 +23,7 @@ class TerminalWindow: NSWindow {
     private let resetZoomAccessory = NSTitlebarAccessoryViewController()
 
     /// Update notification UI in titlebar
-    private let updateAccessory = NSTitlebarAccessoryViewController()
+    private(set) var updateAccessory = NSTitlebarAccessoryViewController()
 
     private(set) lazy var fileBrowserAccessory = FileBrowserTitlebarAccessory { [weak self] in
         (self?.windowController as? BaseTerminalController)?.toggleFileBrowser(self)
@@ -162,12 +162,8 @@ class TerminalWindow: NSWindow {
             // Create update notification accessory
             if supportsUpdateAccessory {
                 updateAccessory.layoutAttribute = .right
-                updateAccessory.view = NonDraggableHostingView(rootView: UpdateAccessoryView(
-                    viewModel: viewModel,
-                    model: appDelegate.updateViewModel
-                ))
+                updateAccessory.view = makeUpdateAccessoryView(model: appDelegate.updateViewModel)
                 addTitlebarAccessoryViewController(updateAccessory)
-                updateAccessory.view.translatesAutoresizingMaskIntoConstraints = false
             }
         }
 
@@ -188,6 +184,11 @@ class TerminalWindow: NSWindow {
 
         // Get our saved level
         level = UserDefaults.ghostty.value(forKey: Self.defaultLevelKey) as? NSWindow.Level ?? .normal
+    }
+
+    func makeUpdateAccessoryView(model: UpdateViewModel) -> NSView {
+        UpdateAccessoryContainer(model: model,
+                                 trailingInset: supportsFileBrowserAccessory ? 0 : FileBrowserTitlebarAccessory.outerInset)
     }
 
     // Both of these must be true for windows without decorations to be able to
@@ -698,6 +699,37 @@ class TerminalWindow: NSWindow {
 
 // MARK: SwiftUI View
 
+/// Keep native vertical layout separate from the pill's changing intrinsic width.
+private final class UpdateAccessoryContainer: NSStackView {
+    private let pill: NonDraggableHostingView<TerminalWindow.UpdateAccessoryView>
+    private var stateObserver: AnyCancellable?
+
+    init(model: UpdateViewModel, trailingInset: CGFloat) {
+        pill = NonDraggableHostingView(rootView: TerminalWindow.UpdateAccessoryView(model: model, trailingInset: trailingInset))
+        super.init(frame: NSRect(x: 0, y: 0, width: 0, height: FileBrowserTitlebarAccessory.rowHeight))
+        // AppKit stretches this native container to its titlebar row. A hosting
+        // view used directly would retain its short height at the row's bottom.
+        orientation = .horizontal
+        alignment = .centerY
+        spacing = 0
+        addArrangedSubview(pill)
+        stateObserver = model.$state.sink { [weak self] _ in
+            // @Published fires before the value changes. Let SwiftUI consume the
+            // new state before measuring; resize width only, never AppKit's row height.
+            DispatchQueue.main.async { [weak self] in self?.syncWidth() }
+        }
+        syncWidth()
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+    private func syncWidth() {
+        pill.layoutSubtreeIfNeeded()
+        setFrameSize(NSSize(width: pill.fittingSize.width, height: frame.height))
+        invalidateIntrinsicContentSize()
+    }
+}
+
 extension TerminalWindow {
     class ViewModel: ObservableObject {
         @Published var isSurfaceZoomed: Bool = false
@@ -741,14 +773,12 @@ extension TerminalWindow {
 
     /// A pill-shaped button that displays update status and provides access to update actions.
     struct UpdateAccessoryView: View {
-        @ObservedObject var viewModel: ViewModel
         @ObservedObject var model: UpdateViewModel
+        let trailingInset: CGFloat
 
         var body: some View {
-            // We use the same top/trailing padding so that it hugs the same.
             UpdatePill(model: model)
-                .padding(.top, viewModel.accessoryTopPadding)
-                .padding(.trailing, viewModel.accessoryTopPadding)
+                .padding(.trailing, model.state.isHidden ? 0 : trailingInset)
         }
     }
 

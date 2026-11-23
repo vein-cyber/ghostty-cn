@@ -4,6 +4,7 @@ import Testing
 @testable import Ghostty
 
 @MainActor
+@Suite(.serialized) // Native windows share AppKit focus and field-editor state.
 struct FileBrowserLayoutTests {
     @Test func compactPathOpensAnEditorAndReturnNavigatesWhileEscapeCancels() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("GhosttyCN-Path-Editor-" + UUID().uuidString)
@@ -156,6 +157,33 @@ struct FileBrowserLayoutTests {
     }
 
     @Test(arguments: [false, true])
+    func updatePillStaysCenteredWhenItAppearsAndCollapsesWhenIdle(hasToolbar: Bool) async throws {
+        let window = TerminalWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 500),
+                                    styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.awakeFromNib()
+        window.appearance = NSAppearance(named: .darkAqua)
+        if hasToolbar {
+            window.toolbar = NSToolbar(identifier: "TitlebarAlignmentTest")
+            window.toolbarStyle = .unifiedCompact
+        }
+        defer { window.close() }
+        let update = UpdateViewModel()
+        window.updateAccessory.view = window.makeUpdateAccessoryView(model: update)
+        for visible in [true, false, true] {
+            update.state = visible ? .notFound(.init(acknowledgement: {})) : .idle
+            try await Task.sleep(for: .milliseconds(80))
+            window.layoutIfNeeded()
+            window.contentView?.superview?.layoutSubtreeIfNeeded()
+            if visible {
+                try checkTitlebarSpacing(window)
+            } else {
+                #expect(window.updateAccessory.view.frame.width <= 1, "Idle updates must not reserve empty titlebar space")
+            }
+        }
+    }
+
+    @Test(arguments: [false, true])
     func titlebarTabsReserveSpaceForThePersistentFileButton(tabsInTitlebar: Bool) async throws {
         func makeWindow(_ title: String) -> TerminalWindow {
             let rect = NSRect(x: 0, y: 0, width: 1100, height: 500)
@@ -181,6 +209,13 @@ struct FileBrowserLayoutTests {
                     .overlay(Text(verbatim: "❯  cd ~/Projects\n❯  ")
                         .font(.system(size: 13, design: .monospaced)).padding(16), alignment: .topLeading)
                     .environment(\.colorScheme, .dark))
+            // Exercise the real accessory with a visible blue update pill, not
+            // only its transparent hosting view (which can hide padding bugs).
+            if window.supportsUpdateAccessory {
+                let update = UpdateViewModel()
+                update.state = .notFound(.init(acknowledgement: {}))
+                window.updateAccessory.view = window.makeUpdateAccessoryView(model: update)
+            }
             return window
         }
         let first = makeWindow("project — zsh")
@@ -201,7 +236,8 @@ struct FileBrowserLayoutTests {
                 (selected as? TitlebarTabsTahoeTerminalWindow)?.setupTabBar()
                 selected.contentView?.superview?.layoutSubtreeIfNeeded()
                 let accessory = selected.fileBrowserAccessory
-                #expect(selected.fileBrowserTitlebarWidth == FileBrowserButtonLayout.size.width + FileBrowserTitlebarAccessory.outerInset * 2)
+                #expect(selected.fileBrowserTitlebarWidth == FileBrowserButtonLayout.size.width +
+                        FileBrowserTitlebarAccessory.accessorySpacing + FileBrowserTitlebarAccessory.outerInset)
                 let button = accessory.button.convert(accessory.button.bounds, to: nil)
                 #expect(button.maxX <= selected.frame.width)
                 #expect(button.maxX >= selected.frame.width - 40)
@@ -237,9 +273,46 @@ struct FileBrowserLayoutTests {
         #expect(window.frame.height - frame.maxY >= 4)
         let rowBottom = controls.midY - (window.frame.height - controls.midY)
         #expect(frame.minY - rowBottom >= 4)
-        #expect(abs(window.frame.width - frame.maxX - 12) <= 1)
+        #expect(abs(window.frame.width - frame.maxX - 16) <= 1)
         #expect(frame.height == 24)
         #expect(button.font?.pointSize == 13)
+        guard window.supportsUpdateAccessory else { return }
+        let pill = try updatePillFrame(window)
+        #expect(abs(pill.midY - controls.midY) <= 1,
+                """
+                Update pill \(pill) must align to window controls \(controls);
+                host \(window.updateAccessory.view.frame), safe area \(window.updateAccessory.view.safeAreaInsets),
+                file host \(window.fileBrowserAccessory.view.frame)
+                """)
+        #expect(abs(frame.minX - pill.maxX - 12) <= 1,
+                "Update pill and sidebar action must have a 12-point gap")
+    }
+
+    /// Measure the colored pixels, so asymmetric SwiftUI padding cannot pass
+    /// simply because the outer NSHostingView is correctly centered by AppKit.
+    private func updatePillFrame(_ window: TerminalWindow) throws -> NSRect {
+        let host = try #require(window.contentView?.superview)
+        let update = window.updateAccessory.view
+        let area = host.convert(update.bounds, from: update)
+        let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        let scale = CGFloat(bitmap.pixelsWide) / host.bounds.width
+        var pixels = NSRect.null
+        let top = host.isFlipped ? area.minY : host.bounds.maxY - area.maxY
+        for y in max(0, Int(top * scale))..<min(bitmap.pixelsHigh, Int(ceil((top + area.height) * scale))) {
+            for x in max(0, Int(area.minX * scale))..<min(bitmap.pixelsWide, Int(ceil(area.maxX * scale))) {
+                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.deviceRGB),
+                      color.blueComponent > color.redComponent + 0.2,
+                      color.blueComponent > color.greenComponent + 0.1 else { continue }
+                pixels = pixels.union(NSRect(x: x, y: y, width: 1, height: 1))
+            }
+        }
+        #expect(!pixels.isNull, "A visible blue update pill must be rendered")
+        guard !pixels.isNull else { return .zero }
+        let rect = NSRect(x: pixels.minX / scale,
+                          y: host.isFlipped ? pixels.minY / scale : host.bounds.maxY - pixels.maxY / scale,
+                          width: pixels.width / scale, height: pixels.height / scale)
+        return host.convert(rect, to: nil)
     }
 
     private func saveTitlebarWindow(_ window: TerminalWindow, name: String) throws {
