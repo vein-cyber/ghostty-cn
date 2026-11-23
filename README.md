@@ -1,322 +1,54 @@
-<!-- LOGO -->
-<h1>
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/fe853809-ba8b-400b-83ab-a9a0da25be8a" alt="Logo" width="128">
-  <br>GhosttyCN 简体中文版
-</h1>
-  <p align="center">
-    基于 Ghostty 上游项目，为 macOS 原生界面提供简体中文支持。
-    <br />
-    保留原生性能、界面体验和 <code>libghostty</code> 能力。
-    <br />
-    <a href="#ghosttycn-简体中文版">中文版说明</a>
-    ·
-    <a href="https://github.com/vein-cyber/ghostty-cn/releases">下载</a>
-    ·
-    <a href="https://ghostty.org/docs">上游文档</a>
-    ·
-    <a href="CONTRIBUTING.md">参与贡献</a>
-    ·
-    <a href="HACKING.md">开发</a>
-  </p>
+  <img src="https://github.com/user-attachments/assets/fe853809-ba8b-400b-83ab-a9a0da25be8a" alt="GhosttyCN" width="128">
 </p>
 
-## GhosttyCN 简体中文版
+<h1 align="center">GhosttyCN</h1>
 
-本仓库基于 [Ghostty](https://github.com/ghostty-org/ghostty)，第一阶段为
-macOS 原生应用提供完整的简体中文界面。英文继续作为源语言和回退语言，
-不改变配置键、命令行参数、AppleScript 接口或终端内容。
+<p align="center">
+  适用于 macOS 的 Ghostty 中文增强版
+  <br>
+  简体中文界面 · 可视化设置 · 终端文件侧栏
+</p>
 
-目前已实现：
+<p align="center">
+  <a href="https://github.com/vein-cyber/ghostty-cn/releases/latest">下载最新版</a>
+  ·
+  <a href="https://github.com/vein-cyber/ghostty-cn/releases">更新记录</a>
+  ·
+  <a href="https://ghostty.org/docs">使用文档</a>
+</p>
 
-- macOS 菜单、窗口、弹窗、通知、更新界面、App Intents 和无障碍文案的
-  `zh-Hans` 本地化。
-- 使用现有 gettext `zh_CN` 翻译核心命令标题和说明。
-- 跟随 macOS 系统语言以及“每个 App 的语言”设置，完全退出并重新启动后
-  生效。
-- 保持英文回退；品牌名、快捷键、路径、用户标题和终端内容保持原样。
-- 通过本仓库的 GitHub Release 检查并安装经过 Sparkle 签名的更新，不会切换到
-  Ghostty 官方版本。
-- 集成离线可视化设置编辑器，可直接载入、保存并重新应用当前配置。
+## 主要功能
 
-### 选择简体中文
+- **简体中文界面**：菜单、设置、提示和命令面板支持中文，跟随 macOS 语言设置。
+- **可视化设置**：整合 [Ghostty Config](https://github.com/zerebos/ghostty-config)，支持分类、搜索和配置编辑，离线可用。
+- **文件侧栏**：浏览本地及当前 SSH 主机的文件，自动跟随终端目录，支持预览、上传下载、新建、重命名和删除。
+- **原生终端体验**：支持多窗口、标签页、分屏，以及主题、终端字体和透明背景设置。
+- **应用内更新**：通过本仓库的 GitHub Release 获取更新，不会替换为官方原版。
+- **与原版并存**：可与 Ghostty 同时安装，共享终端配置，应用偏好和系统权限独立管理。
 
-当 macOS 的首选语言为简体中文时，GhosttyCN 会自动使用中文。也可以前往
-“系统设置 → 通用 → 语言与地区 → 应用程序”，为 GhosttyCN 单独选择
-“简体中文”。切换后需要完全退出 GhosttyCN，再重新启动。
+## 下载与安装
 
-### 可视化设置
+支持 **macOS 13 及以上版本**，安装包同时适用于 Apple Silicon 和 Intel Mac。
 
-按 `⌘,` 或选择“GhosttyCN → 设置…”即可打开内置设置编辑器。编辑器基于
-[ghostty-config](https://github.com/zerebos/ghostty-config)，资源随应用离线提供，
-无需连接外部网站。
+1. 在 [Releases](https://github.com/vein-cyber/ghostty-cn/releases/latest) 下载通用版 ZIP 并解压。
+2. 退出旧版，将 `GhosttyCN.app` 放入“应用程序”后打开。
 
-首次保存已有配置时，GhosttyCN 会在同一目录创建扩展名为
-`.before-ghostty-cn` 的备份。保存过程会保留注释、编辑器暂不支持的选项以及
-`config-file` 配置包含关系；可视化编辑器管理的项目会写入单独的标记区域，
-然后立即重新载入配置。需要完整手工控制时，可以点击“编辑原始配置”。
+应用未经过 Apple 公证，首次启动若被拦截，请在“系统设置 → 隐私与安全性”中确认打开。
+后续可通过“GhosttyCN → 检查更新”升级；`v0.2.x` 用户需手动安装一次。
 
-### 文件管理
+请从本仓库下载；Ghostty 官方下载页面提供的是原版，不包含本项目的增强功能。
 
-通过右上角侧栏图标或“显示 → 文件管理”打开终端侧栏，支持：
+## 快速使用
 
-- 自动跟随本地工作目录，关联当前 SSH 主机并跟随远程目录。
-- 文件筛选、显示隐藏文件、复制路径、新建文件夹、重命名与删除。
-- 只读文本预览、打开符号链接指向的文件和文件夹，以及远程文件上传和下载。
-- 鼠标选中、方向键选择，回车或双击进入目录、预览文件。
-- 侧栏左右放置、拖动调整宽度、跟随终端主题，并自动保存偏好。
-- 设置新窗口默认显示文件管理。
+- **打开设置**：按 `⌘,` 或选择“GhosttyCN → 设置”，修改后点击“应用并重新加载”；也可编辑原始配置。
+- **打开文件侧栏**：点击窗口右上角的侧栏图标，或选择“显示 → 文件管理”。支持左右放置、调整宽度，并保存偏好。
+- **切换中文**：在“系统设置 → 通用 → 语言与地区 → 应用程序”中为 GhosttyCN 选择“简体中文”，退出并重新启动后生效。
 
-### 与原版同时安装
+## 项目来源与开发
 
-macOS 产物名为 `GhosttyCN.app`，使用独立的应用标识，因此可以与官方
-`Ghostty.app` 同时放在“应用程序”目录并分别运行。两者继续读取同一份
-`~/Library/Application Support/com.mitchellh.ghostty/config.ghostty`；应用偏好、
-窗口状态、系统权限以及“每个 App 的语言”设置则彼此独立。
+GhosttyCN 基于 [Ghostty](https://github.com/ghostty-org/ghostty) 开发，
+可视化设置整合自 [Ghostty Config](https://github.com/zerebos/ghostty-config)。感谢上游项目及贡献者。
 
-### 自动更新
-
-GhosttyCN 使用独立的更新源
-[`appcast.xml`](https://vein-cyber.github.io/ghostty-cn/appcast.xml)，更新包由本仓库的
-[GitHub Releases](https://github.com/vein-cyber/ghostty-cn/releases) 提供，并使用
-GhosttyCN 专属 Sparkle EdDSA 密钥验证。`stable` 和 `tip` 配置在 GhosttyCN 中共用
-同一个更新通道。
-
-`v0.3.0-cn.1` 是首个支持自动更新的新应用身份版本。旧的 `v0.2.x` 构建仍使用
-原版 Ghostty 的应用身份，因此需要手动下载安装 `v0.3.0-cn.1` 一次；之后可以从
-“GhosttyCN → 检查更新…”完成更新。
-
-公开构建使用临时签名且未经过 Apple 公证。首次打开时 macOS 可能要求前往
-“系统设置 → 隐私与安全性”确认打开；Sparkle 更新包本身仍会进行签名验证。
-
-### 本地构建
-
-使用 Zig 0.17.1 构建经过优化、同时支持 Apple Silicon 与 Intel 的本地 Release 版本：
-
-```shell
-zig build -Doptimize=fast -Demit-macos-app=false
-macos/build.nu --configuration ReleaseLocal
-open macos/build/ReleaseLocal/GhosttyCN.app
-```
-
-产物位于 `macos/build/ReleaseLocal/GhosttyCN.app`。`ReleaseLocal` 使用本机临时
-签名；本仓库公开的版本同样不使用 Apple Developer 证书或 Apple 公证。
-
-如果 Xcode 提示缺少 Metal 编译组件，先运行
-`xcodebuild -downloadComponent MetalToolchain`，再重新构建。
-
-> [!IMPORTANT]
->
-> [Ghostty 官方下载页面](https://ghostty.org/download)提供的是上游原版，
-> 不包含本仓库的简体中文改动。
-
-## About
-
-Ghostty is a terminal emulator that differentiates itself by being
-fast, feature-rich, and native. While there are many excellent terminal
-emulators available, they all force you to choose between speed,
-features, or native UIs. Ghostty provides all three.
-
-**`libghostty`** is a cross-platform, zero-dependency C and Zig library
-for building terminal emulators or utilizing terminal functionality
-(such as style parsing). Anyone can use `libghostty` to build a terminal
-emulator or embed a terminal into their own applications. See
-[Ghostling](https://github.com/ghostty-org/ghostling) for a minimal complete project
-example or the [`examples` directory](https://github.com/ghostty-org/ghostty/tree/main/example)
-for smaller examples of using `libghostty` in C and Zig.
-
-For more details, see [About Ghostty](https://ghostty.org/docs/about).
-
-## Download
-
-Simplified Chinese builds are published on this repository's
-[Releases page](https://github.com/vein-cyber/ghostty-cn/releases). The
-[official Ghostty download page](https://ghostty.org/download) provides the
-upstream build without this repository's localization changes.
-
-## Documentation
-
-See the [documentation](https://ghostty.org/docs) on the Ghostty website.
-
-## Contributing and Developing
-
-If you have any ideas, issues, etc. regarding Ghostty, or would like to
-contribute to Ghostty through pull requests, please check out our
-["Contributing to Ghostty"](CONTRIBUTING.md) document. Those who would like
-to get involved with Ghostty's development as well should also read the
-["Developing Ghostty"](HACKING.md) document for more technical details.
-
-## Roadmap and Status
-
-Ghostty is stable and in use by millions of people and machines daily.
-
-The high-level ambitious plan for the project, in order:
-
-|  #  | Step                                                    | Status |
-| :-: | ------------------------------------------------------- | :----: |
-|  1  | Standards-compliant terminal emulation                  |   ✅   |
-|  2  | Competitive performance                                 |   ✅   |
-|  3  | Rich windowing features -- multi-window, tabbing, panes |   ✅   |
-|  4  | Native Platform Experiences                             |   ✅   |
-|  5  | Cross-platform `libghostty` for Embeddable Terminals    |   ✅   |
-|  6  | Ghostty-only Terminal Control Sequences                 |   ❌   |
-
-Additional details for each step in the big roadmap below:
-
-#### Standards-Compliant Terminal Emulation
-
-Ghostty implements all of the regularly used control sequences and
-can run every mainstream terminal program without issue. For legacy sequences,
-we've done a [comprehensive xterm audit](https://github.com/ghostty-org/ghostty/issues/632)
-comparing Ghostty's behavior to xterm and building a set of conformance
-test cases.
-
-In addition to legacy sequences (what you'd call real "terminal" emulation),
-Ghostty also supports more modern sequences than almost any other terminal
-emulator. These features include things like the Kitty graphics protocol,
-Kitty image protocol, clipboard sequences, synchronized rendering,
-light/dark mode notifications, and many, many more.
-
-We believe Ghostty is one of the most compliant and feature-rich terminal
-emulators available.
-
-Terminal behavior is partially a de jure standard
-(i.e. [ECMA-48](https://ecma-international.org/publications-and-standards/standards/ecma-48/))
-but mostly a de facto standard as defined by popular terminal emulators
-worldwide. Ghostty takes the approach that our behavior is defined by
-(1) standards, if available, (2) xterm, if the feature exists, (3)
-other popular terminals, in that order. This defines what the Ghostty project
-views as a "standard."
-
-#### Competitive Performance
-
-Ghostty is generally in the same performance category as the other highest
-performing terminal emulators.
-
-"The same performance category" means that Ghostty is much faster than
-traditional or "slow" terminals and is within an unnoticeable margin of the
-well-known "fast" terminals. For example, Ghostty and Alacritty are usually within
-a few percentage points of each other on various benchmarks, but are both
-something like 100x faster than Terminal.app and iTerm. However, Ghostty
-is much more feature rich than Alacritty and has a much more native app
-experience.
-
-This performance is achieved through high-level architectural decisions and
-low-level optimizations. At a high-level, Ghostty has a multi-threaded
-architecture with a dedicated read thread, write thread, and render thread
-per terminal. Our renderer uses OpenGL on Linux and Metal on macOS.
-Our read thread has a heavily optimized terminal parser that leverages
-CPU-specific SIMD instructions. Etc.
-
-#### Rich Windowing Features
-
-The Mac and Linux (build with GTK) apps support multi-window, tabbing, and
-splits with additional features such as tab renaming, coloring, etc. These
-features allow for a higher degree of organization and customization than
-single-window terminals.
-
-#### Native Platform Experiences
-
-Ghostty is a cross-platform terminal emulator but we don't aim for a
-least-common-denominator experience. There is a large, shared core written
-in Zig but we do a lot of platform-native things:
-
-- The macOS app is a true SwiftUI-based application with all the things you
-  would expect such as real windowing, menu bars, a settings GUI, etc.
-- macOS uses a true Metal renderer with CoreText for font discovery.
-- macOS supports AppleScript, Apple Shortcuts (AppIntents), etc.
-- The Linux app is built with GTK.
-- The Linux app integrates deeply with systemd if available for things
-  like always-on, new windows in a single instance, cgroup isolation, etc.
-
-Our goal with Ghostty is for users of whatever platform they run Ghostty
-on to think that Ghostty was built for their platform first and maybe even
-exclusively. We want Ghostty to feel like a native app on every platform,
-for the best definition of "native" on each platform.
-
-#### Cross-platform `libghostty` for Embeddable Terminals
-
-In addition to being a standalone terminal emulator, Ghostty is a
-C-compatible library for embedding a fast, feature-rich terminal emulator
-in any 3rd party project. This library is called `libghostty`.
-
-Due to the scope of this project, we're breaking libghostty down into
-separate libraries, starting with `libghostty-vt`. The goal of
-this project is to focus on parsing terminal sequences and maintaining
-terminal state. This is covered in more detail in this
-[blog post](https://mitchellh.com/writing/libghostty-is-coming).
-
-`libghostty-vt` is already available and usable today for Zig and C and
-is compatible for macOS, Linux, Windows, and WebAssembly. The functionality
-is extremely stable (since its been proven in Ghostty GUI for a long time),
-but the API signatures are still in flux.
-
-`libghostty` is already heavily in use. See [`examples`](https://github.com/ghostty-org/ghostty/tree/main/example)
-for small examples of using `libghostty` in C and Zig or the
-[Ghostling](https://github.com/ghostty-org/ghostling) project for a
-complete example. See [awesome-libghostty](https://github.com/Uzaaft/awesome-libghostty)
-for a list of projects and resources related to `libghostty`.
-
-`libghostty-vt` is released on its own, separately from Ghostty, with
-`vt-X.Y.Z` tags. To build or package it, see
-[`PACKAGING-LIBGHOSTTY.md`](PACKAGING-LIBGHOSTTY.md). To use it from a
-CMake project, see [`dist/cmake/README.md`](dist/cmake/README.md). We're
-still working on a better docs experience, but our
-[Doxygen website](https://lib.ghostty.org/vt/) is a good resource
-for the C API.
-
-#### Ghostty-only Terminal Control Sequences
-
-We want and believe that terminal applications can and should be able
-to do so much more. We've worked hard to support a wide variety of modern
-sequences created by other terminal emulators towards this end, but we also
-want to fill the gaps by creating our own sequences.
-
-We've been hesitant to do this up until now because we don't want to create
-more fragmentation in the terminal ecosystem by creating sequences that only
-work in Ghostty. But, we do want to balance that with the desire to push the
-terminal forward with stagnant standards and the slow pace of change in the
-terminal ecosystem.
-
-We haven't done any of this yet.
-
-## Crash Reports
-
-Ghostty has a built-in crash reporter that will generate and save crash
-reports to disk. The crash reports are saved to the `$XDG_STATE_HOME/ghostty/crash`
-directory. If `$XDG_STATE_HOME` is not set, the default is `~/.local/state`.
-**Crash reports are _not_ automatically sent anywhere off your machine.**
-
-Crash reports are only generated the next time Ghostty is started after a
-crash. If Ghostty crashes and you want to generate a crash report, you must
-restart Ghostty at least once. You should see a message in the log that a
-crash report was generated.
-
-> [!NOTE]
->
-> Use the `ghostty +crash-report` CLI command to get a list of available crash
-> reports. A future version of Ghostty will make the contents of the crash
-> reports more easily viewable through the CLI and GUI.
-
-Crash reports end in the `.ghosttycrash` extension. The crash reports are in
-[Sentry envelope format](https://develop.sentry.dev/sdk/envelopes/). You can
-upload these to your own Sentry account to view their contents, but the format
-is also publicly documented so any other available tools can also be used.
-The `ghostty +crash-report` CLI command can be used to list any crash reports.
-A future version of Ghostty will show you the contents of the crash report
-directly in the terminal.
-
-To send the crash report to the Ghostty project, you can use the following
-CLI command using the [Sentry CLI](https://docs.sentry.io/cli/installation/):
-
-```shell-session
-SENTRY_DSN=https://e914ee84fd895c4fe324afa3e53dac76@o4507352570920960.ingest.us.sentry.io/4507850923638784 sentry-cli send-envelope --raw <path to ghostty crash>
-```
-
-> [!WARNING]
->
-> The crash report can contain sensitive information. The report doesn't
-> purposely contain sensitive information, but it does contain the full
-> stack memory of each thread at the time of the crash. This information
-> is used to rebuild the stack trace but can also contain sensitive data
-> depending on when the crash occurred.
+- [Ghostty 使用文档](https://ghostty.org/docs)
+- [开发说明](HACKING.md) · [贡献指南](CONTRIBUTING.md) · [许可证](LICENSE)
